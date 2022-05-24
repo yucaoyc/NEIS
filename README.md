@@ -1,6 +1,6 @@
 ### 1. Introduction
 
-We study a non-equilbrium importance sampling (NEIS) method based on ODE flows $\dot{X}_t = \boldsymbol{b}(X_t)$ to estimate high-dimensional integration $\mathcal{Z}_1 = \int_{\Omega} e^{-U_1}$ where $\Omega$ is the domain and $U_1$ is a potential function. This NEIS method was initially proposed by [Rotskoff and Vanden-Eijnden (2019)](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.122.150602). We study how to achieve the largest variance reduction via optimizing the ODE flows $\boldsymbol{b}$
+We study a non-equilbrium importance sampling (NEIS) method based on ODE flows $\dot X_t = \boldsymbol{b}(X_t)$ to estimate high-dimensional integration $\mathcal Z_1 = \int_{\Omega} e^{-U_1}$ where $\Omega$ is the domain and $U_1$ is a potential function. This NEIS method was initially proposed by [Rotskoff and Vanden-Eijnden (2019)](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.122.150602). We study how to achieve the largest variance reduction via optimizing the ODE flows $\boldsymbol{b}$
 $$\min_{\boldsymbol{b}} \text{Var}(\boldsymbol{b}),$$
 where $\text{Var}(\boldsymbol{b})$ is the variance of Monte Carlo estimators associated with the dynamics $\boldsymbol{b}$.
 
