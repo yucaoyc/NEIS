@@ -6,9 +6,10 @@ packages = ["BasicInterpolators",
     "CSV",
     "DataFrames",
     "Documenter",
+    "Distributions",
     "FFTW",
     "FileIO",
-    "Flux",
+    ["Flux","0.12.9"],
     "ForwardDiff",
     "GR",
     "JLD2",
@@ -23,5 +24,9 @@ packages = ["BasicInterpolators",
 using Pkg
 
 for packagename in packages
-    Pkg.add(packagename)
+    if typeof(packagename) <: AbstractString
+        Pkg.add(packagename)
+    else
+        Pkg.add(name=packagename[1], version=packagename[2])
+    end
 end

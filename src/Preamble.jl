@@ -1,12 +1,26 @@
 using Distributed
 num_threads = Base.Sys.CPU_THREADS
-if num_threads <= 32
-    if nprocs() < (num_threads - 2)
-        addprocs(num_threads-2-nprocs())
-    end
-else
-    if nprocs() < num_threads - 8
-        addprocs(num_threads-8-nprocs())
+
+if !(@isdefined to_train)
+  # if to train
+  # then we always add more cpu
+  to_add_procs = true
+end
+
+if !(@isdefined to_add_procs)
+  # by default, not add proc.
+  to_add_procs = false
+end
+
+if to_add_procs
+    if num_threads <= 32
+        if nprocs() < (num_threads - 2)
+            addprocs(num_threads-2-nprocs())
+        end
+    else
+        if nprocs() < num_threads - 8
+            addprocs(num_threads-8-nprocs())
+        end
     end
 end
 

@@ -96,8 +96,8 @@ seed = 1
 
 #train_method = "ode"
 train_method = "int"
-#tmname = "sym"
-tmname = "asym"
+tmname = "sym"
+#tmname = "asym"
 if tmname == "sym"
 	tm = -1/2
 else
