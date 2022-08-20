@@ -2,10 +2,14 @@ export Funnel
 
 # todo: vectorized version of Funnel
 
-struct Funnel{T<:AbstractFloat} <: Potential{T}
+mutable struct Funnel{T<:AbstractFloat} <: Potential{T}
     dim::Int
     σf::T
     cutoff::T # used to avoid Inf, -Inf etc.
+    query_u::UInt128
+    query_gradu::UInt128
+    query_hessu::UInt128
+    query_laplaceu::UInt128
 end
 
 function Funnel(dim::Int, σf::T) where T<:AbstractFloat 
@@ -16,10 +20,11 @@ function Funnel(dim::Int, σf::T) where T<:AbstractFloat
     else
         error("Either use Float32 or Float64!")
     end
-    Funnel(dim, σf, cutoff) 
+    Funnel(dim, σf, cutoff, UInt128(0), UInt128(0), UInt128(0), UInt128(0)) 
 end
 
-function U(p::Funnel{T}, x::Array{T}) where T<:AbstractFloat
+function U(p::Funnel{T}, x::Vector{T}) where T<:AbstractFloat
+    p.query_u += 1
     n = p.dim
     σf = p.σf
     cutoff = p.cutoff
@@ -27,7 +32,8 @@ function U(p::Funnel{T}, x::Array{T}) where T<:AbstractFloat
     return x₁^2/(2*σf^2) + x₁*(n-1)/2 + exp(-max(x₁,cutoff))/2*(dot(x,x)-x₁^2)
 end
 
-function ∇U(p::Funnel{T}, x::Array{T}) where T<:AbstractFloat
+function ∇U(p::Funnel{T}, x::Vector{T}) where T<:AbstractFloat
+    p.query_gradu += 1
     n = p.dim
     σf = p.σf
     cutoff = p.cutoff
@@ -38,7 +44,8 @@ function ∇U(p::Funnel{T}, x::Array{T}) where T<:AbstractFloat
     return v
 end
 
-function LaplaceU(p::Funnel, x::Array{T}) where T<:AbstractFloat
+function LaplaceU(p::Funnel, x::Vector{T}) where T<:AbstractFloat
+    p.query_laplaceu += 1
     n = p.dim
     σf = p.σf
     cutoff = p.cutoff
@@ -46,7 +53,8 @@ function LaplaceU(p::Funnel, x::Array{T}) where T<:AbstractFloat
     return exp(-x₁)*(n-1) + 1/σf^2 + 1/2*exp(-x₁)*dot(x[2:end],x[2:end])
 end
 
-function HessU(p::Funnel, x::Array{T}) where T<:AbstractFloat
+function HessU(p::Funnel, x::Vector{T}) where T<:AbstractFloat
+    p.query_hessu += 1
     n = p.dim
     σf = p.σf
     cutoff = p.cutoff

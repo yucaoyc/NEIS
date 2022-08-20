@@ -29,7 +29,6 @@ include("util/traj.jl")
 
 # todo: 
 # 1. vectorized implementation of funnel.jl
-# 2. Add query statistics for potentials.
 #
 # Potential functions
 abstract type Potential{T} end
@@ -39,6 +38,7 @@ include("potential/gaussian.jl")
 include("potential/gaussian_stat.jl")
 include("potential/funnel.jl")
 include("potential/testcase.jl")
+include("potential/query.jl")
 #include("potential/poisson.jl") # solvers of Poisson eq.
 #include("potential/loggaussiancox.jl")
 
