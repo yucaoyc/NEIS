@@ -1,3 +1,5 @@
+export RestrictedPotential
+
 """
 Given a potential U, 
 implement a new potential V such that 
@@ -10,43 +12,45 @@ mutable struct RestrictedPotential{T<:AbstractFloat} <: Potential{T}
     U::Potential{T}
     Ω::Function
     cutoff::T
-    query_u::UInt128
-    query_gradu::UInt128
-    query_hessu::UInt128
-    query_laplaceu::UInt128
+    query_u::QueryNumber
+    query_gradu::QueryNumber
+    query_hessu::QueryNumber
+    query_laplaceu::QueryNumber
+    count_mode::Symbol
 end
 
 """
 A default constructor. By default, let cutoff=Inf.
 """
-function RestrictedPotential(dim::Int, U::Potential{T}, Ω::Function) where T<:AbstractFloat
-    RestrictedPotential(dim, U, Ω, T(Inf), UInt128(0), UInt128(0), UInt128(0), UInt128(0))
+function RestrictedPotential(dim::Int, U::Potential{T}, Ω::Function; 
+        count_mode=:unsafe_count) where T<:AbstractFloat
+
+    safe = get_safe_mode(count_mode)
+    RestrictedPotential(dim, U, Ω, T(Inf), 
+                        set_query_number(0, safe=safe), set_query_number(0, safe=safe), 
+                        set_query_number(0, safe=safe), set_query_number(0, safe=safe),
+                        count_mode)
 end
 
-function U(p::RestrictedPotential{T}, x::Vector{T}) where T<:AbstractFloat
-    p.query_u += 1
+function _U(p::RestrictedPotential{T}, x::Vector{T}) where T<:AbstractFloat
     p.Ω(x) ? U(p.U, x) : p.cutoff
 end
 
-function U(p::RestrictedPotential{T}, x::Matrix{T}) where T<:AbstractFloat
-    p.query_u += size(x,2)
+function _U(p::RestrictedPotential{T}, x::Matrix{T}) where T<:AbstractFloat
     idx = p.Ω(x)
     v = U(p.U, x)
     v[@.(!idx)] .= p.cutoff
     return v
 end
 
-function ∇U(p::RestrictedPotential{T}, x::Vector{T}) where T<:AbstractFloat
-    p.query_gradu += 1
+function _∇U(p::RestrictedPotential{T}, x::Vector{T}) where T<:AbstractFloat
     p.Ω(x) ? ∇U(p.U, x) : zeros(T, p.dim)
 end
 
-function HessU(p::RestrictedPotential{T}, x::Vector{T}) where T<:AbstractFloat
-    p.query_hessu += 1
+function _HessU(p::RestrictedPotential{T}, x::Vector{T}) where T<:AbstractFloat
     p.Ω(x) ? HessU(p.U, x) : zeros(T, p.dim, p.dim)
 end
 
-function LaplaceU(p::RestrictedPotential{T}, x::Vector{T}) where T<:AbstractFloat
-    p.query_laplaceu += 1
+function _LaplaceU(p::RestrictedPotential{T}, x::Vector{T}) where T<:AbstractFloat
     p.Ω(x) ? LaplaceU(p.U, x) : T(0.0)
 end

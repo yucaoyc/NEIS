@@ -173,6 +173,11 @@ function grad_divg_wrt_para_part(flow::DynNNGenericTwo{T}, x::Matrix{T}) where T
     return Fw1, Fb1, Fw2, Fb2
 end
 
+function grad_divg_wrt_para_part(flow::DynNNGenericTwo{T}, x::Vector{T}) where T<:AbstractFloat
+    Fw1, Fb1, Fw2, Fb2 = grad_divg_wrt_para_part(flow, reshape(x,(length(x),1)))
+    return Fw1[:,:,1], Fb1[:,1], Fw2[:,:,1], Fb2[:,1]
+end
+
 function grad_divg_wrt_para(flow::DynNNGenericTwo{T}, x::Matrix{T}) where T <: AbstractFloat
     num_particle = size(x,2)
     A = zeros(T, flow.total_num_para, num_particle)

@@ -6,13 +6,14 @@ mutable struct Funnel{T<:AbstractFloat} <: Potential{T}
     dim::Int
     σf::T
     cutoff::T # used to avoid Inf, -Inf etc.
-    query_u::UInt128
-    query_gradu::UInt128
-    query_hessu::UInt128
-    query_laplaceu::UInt128
+    query_u::QueryNumber
+    query_gradu::QueryNumber
+    query_hessu::QueryNumber
+    query_laplaceu::QueryNumber
+    count_mode::Symbol
 end
 
-function Funnel(dim::Int, σf::T) where T<:AbstractFloat 
+function Funnel(dim::Int, σf::T; count_mode=:unsafe_count) where T<:AbstractFloat 
     if T==Float32
         cutoff = T(-80)
     elseif T==Float64
@@ -20,11 +21,18 @@ function Funnel(dim::Int, σf::T) where T<:AbstractFloat
     else
         error("Either use Float32 or Float64!")
     end
-    Funnel(dim, σf, cutoff, UInt128(0), UInt128(0), UInt128(0), UInt128(0)) 
+
+    safe = get_safe_mode(count_mode)
+
+    Funnel(dim, σf, cutoff, 
+           set_query_number(0, safe=safe), 
+           set_query_number(0, safe=safe),
+           set_query_number(0, safe=safe), 
+           set_query_number(0, safe=safe), 
+           count_mode) 
 end
 
-function U(p::Funnel{T}, x::Vector{T}) where T<:AbstractFloat
-    p.query_u += 1
+function _U(p::Funnel{T}, x::Vector{T}) where T<:AbstractFloat
     n = p.dim
     σf = p.σf
     cutoff = p.cutoff
@@ -32,8 +40,7 @@ function U(p::Funnel{T}, x::Vector{T}) where T<:AbstractFloat
     return x₁^2/(2*σf^2) + x₁*(n-1)/2 + exp(-max(x₁,cutoff))/2*(dot(x,x)-x₁^2)
 end
 
-function ∇U(p::Funnel{T}, x::Vector{T}) where T<:AbstractFloat
-    p.query_gradu += 1
+function _∇U(p::Funnel{T}, x::Vector{T}) where T<:AbstractFloat
     n = p.dim
     σf = p.σf
     cutoff = p.cutoff
@@ -44,8 +51,7 @@ function ∇U(p::Funnel{T}, x::Vector{T}) where T<:AbstractFloat
     return v
 end
 
-function LaplaceU(p::Funnel, x::Vector{T}) where T<:AbstractFloat
-    p.query_laplaceu += 1
+function _LaplaceU(p::Funnel, x::Vector{T}) where T<:AbstractFloat
     n = p.dim
     σf = p.σf
     cutoff = p.cutoff
@@ -53,8 +59,7 @@ function LaplaceU(p::Funnel, x::Vector{T}) where T<:AbstractFloat
     return exp(-x₁)*(n-1) + 1/σf^2 + 1/2*exp(-x₁)*dot(x[2:end],x[2:end])
 end
 
-function HessU(p::Funnel, x::Vector{T}) where T<:AbstractFloat
-    p.query_hessu += 1
+function _HessU(p::Funnel, x::Vector{T}) where T<:AbstractFloat
     n = p.dim
     σf = p.σf
     cutoff = p.cutoff

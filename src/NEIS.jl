@@ -32,15 +32,18 @@ include("util/traj.jl")
 #
 # Potential functions
 abstract type Potential{T} end
+include("potential/query.jl")
 include("potential/mixture_potential.jl")
 include("potential/restricted.jl")
 include("potential/gaussian.jl")
 include("potential/gaussian_stat.jl")
 include("potential/funnel.jl")
 include("potential/testcase.jl")
-include("potential/query.jl")
 #include("potential/poisson.jl") # solvers of Poisson eq.
 #include("potential/loggaussiancox.jl")
+function (V::Potential{T})(x::Array{T}) where T<:AbstractFloat
+    return U(V, x)
+end
 
 # Implementation of classical methods
 include("classical_methods/vanilla.jl") # vanilla IS.
@@ -60,14 +63,14 @@ include("dyn/dyn_generic_two.jl") # a generic two-layer nn-flow.
 include("dyn/dyn_generic_one.jl")
 include("dyn/dyn_grad_two.jl")
 include("dyn/dyn_funnelexpansatz.jl")
-#include("dyn/dyn_grad_flow.jl")
-#export DynNNGeneric
 DynNNGeneric=Union{DynNNGenericOne, DynNNGenericTwo, DynNNGradTwo}
+include("dyn/dyn_util.jl")
+#include("dyn/dyn_grad_flow.jl")
 
 # training optimal flows
-#include("opt/opt.jl")
+include("opt/opt.jl")
+include("opt/opt_int.jl")
 #include("opt/opt_ode.jl")
-#include("opt/opt_int.jl")
 
 # Generator
 #include("dyn/ode_flow.jl")

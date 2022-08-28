@@ -10,7 +10,7 @@ function RK4(f::Function, x0::Union{Tuple,Array},
     k2 = f(x0 .+ h/2 .* k1, t+h/2, para)
     k3 = f(x0 .+ h/2 .* k2, t+h/2, para)
     k4 = f(x0 .+ h .* k3, t+h, para)
-    return x0 .+ (1/6*h) .* (k1 .+ 2 .* k2 .+ 2 .* k3 .+ k4)
+    return x0 .+ T(1/6*h) .* (k1 .+ 2 .* k2 .+ 2 .* k3 .+ k4)
 end
 
 """
@@ -45,7 +45,7 @@ function time_integrate(ode_dyn::Function, para::Any,
     a::T, b::T, N::Int,
     ode_solver::Function,
     test_func::AbstractArray{Function},
-    test_func_para::AbstractArray{Any}) where T<:AbstractFloat
+    test_func_para::AbstractArray{}) where T<:AbstractFloat
 
     m = length(test_func)
     func_values = zeros(T, m, N+1)

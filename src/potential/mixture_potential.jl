@@ -15,33 +15,38 @@ mutable struct MixturePotential{T<:AbstractFloat} <: Potential{T}
     Ulist::Array{}
     weightlist::Array{T,1}
     β::T
-    query_u::UInt128
-    query_gradu::UInt128
-    query_hessu::UInt128
-    query_laplaceu::UInt128
+    query_u::QueryNumber
+    query_gradu::QueryNumber
+    query_hessu::QueryNumber
+    query_laplaceu::QueryNumber
+    count_mode::Symbol
 end
 
-function MixturePotential(dim::Int, Ul::Array{}, wl::Array{T,1}) where T<: AbstractFloat
-    return MixturePotential(dim, Ul, wl, T(1.0), UInt128(0), UInt128(0), UInt128(0), UInt128(0))
+function MixturePotential(dim::Int, Ul::Array{}, wl::Array{T,1}; 
+        count_mode=:unsafe_count) where T<: AbstractFloat
+    
+    safe = get_safe_mode(count_mode)
+    return MixturePotential(dim, Ul, wl, T(1.0), 
+                            set_query_number(0, safe=safe), 
+                            set_query_number(0, safe=safe), 
+                            set_query_number(0, safe=safe), 
+                            set_query_number(0, safe=safe),
+                            count_mode)
 end
 
-function U(p::MixturePotential{T}, x::Array{T}) where T<:AbstractFloat
-    p.query_u += size(x,2)
+function _U(p::MixturePotential{T}, x::Array{T}) where T<:AbstractFloat
     return mixedPotential_Potential(x, p.Ulist, p.weightlist, p.β) 
 end
 
-function ∇U(p::MixturePotential{T}, x::Array{T}) where T<:AbstractFloat
-    p.query_gradu += size(x,2)
+function _∇U(p::MixturePotential{T}, x::Array{T}) where T<:AbstractFloat
     return mixedPotential_Grad(x, p.Ulist, p.weightlist, p.β)
 end
 
-function HessU(p::MixturePotential{T}, x::Array{T}) where T<:AbstractFloat
-    p.query_hessu += size(x,2)
+function _HessU(p::MixturePotential{T}, x::Array{T}) where T<:AbstractFloat
     return mixedPotential_Hess(x, p.Ulist, p.weightlist, p.β)
 end
 
-function LaplaceU(p::MixturePotential{T}, x::Array{T}) where T<:AbstractFloat
-    p.query_laplaceu += size(x,2)
+function _LaplaceU(p::MixturePotential{T}, x::Array{T}) where T<:AbstractFloat
     return mixedPotential_Laplace(x, p.Ulist, p.weightlist, p.β)
 end
 

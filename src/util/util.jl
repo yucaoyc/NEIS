@@ -10,7 +10,8 @@ export get_resource,
 #       prod_domain,
        print_stat_name,
        add_procs,
-       repeat_experiment
+       repeat_experiment,
+       get_mean_sec_moment
 
 export divide_col, multiply_col
 """
@@ -171,4 +172,20 @@ function repeat_experiment(fun::Function, numsample::Int, numrepeat::Int,
         v[i] = fun(numsample) 
     end
     return v
+end
+
+# todo: add NaN protection
+function get_mean_sec_moment(data::Vector{Vector{T}}) where T<:AbstractFloat
+    numsample = length(data)
+    L = length(data[1])
+    fst_m = zeros(T, L)
+    sec_m = zeros(T, L)
+    for j = 1:numsample
+        fst_m .+= data[j]
+        sec_m .+= data[j].^2
+    end
+    fst_m /= numsample
+    sec_m /= numsample
+
+    return fst_m, sec_m
 end
