@@ -1,4 +1,6 @@
 export get_resource, 
+       get_train_stat,
+       print_train_stat,
        get_ndims, 
        plot_setup,
        randHermitian, 
@@ -7,13 +9,13 @@ export get_resource,
        integrate_over_time,
        domain_ball,
        domain_rectangle,
-#       prod_domain,
+       prod_domain,
        print_stat_name,
        add_procs,
        repeat_experiment,
        get_mean_sec_moment
-
 export divide_col, multiply_col
+
 """
 Divide each column of a by b, i.e., return a[:,i]/b[i] as column i.
 """
@@ -33,12 +35,42 @@ function multiply_col(a::Array{T,1}, b::T) where T <: AbstractFloat
     return b .* a
 end
 
-
 """
-Get CPU information and number of processors used.
+Get CPU information, number of processors used, and number of threads.
 """
 function get_resource()
-    return (Sys.cpu_info()[1].model, nprocs())
+    return Dict{Symbol,Any}(:cpu=>Sys.cpu_info()[1].model, 
+                :nprocs=>nprocs(),
+                :nthreads=>Threads.nthreads())
+end
+
+"""
+Pack resources, runtime and query statistics into a Dictionary.
+"""
+function get_train_stat(train_time, U₁)
+    # get training resources
+    info = get_resource()
+    # train time
+    info[:runtime] = train_time
+    # queries
+    info[:query] = get_query_stat(U₁)
+
+    return info
+end
+
+function print_train_stat(info)
+    @printf("cpu is %s\n", info[:cpu])
+    @printf("nprocs=%3d, nthreads=%3d\n", info[:nprocs], info[:nthreads])
+    @printf("runtime %10.2f (seconds)\n", info[:runtime])
+    a, b, c, d = info[:query]
+    @printf("query (U): %10s\n", datasize(a))
+    @printf("query (∇U): %9s\n", datasize(b))
+    @printf("query (∇²U): %8s\n", datasize(c))
+    @printf("query (ΔU): %9s\n", datasize(d))
+    #@printf("query (U): %12d\n", a)
+    #@printf("query (∇U): %11d\n", b)
+    #@printf("query (∇²U): %10d\n", c)
+    #@printf("query (ΔU): %11d\n", d)
 end
 
 """
@@ -125,10 +157,10 @@ function domain_rectangle(x::Vector{T},
     return prod(r)
 end
 
-#function prod_domain(Ω₁::Function, Ω₂::Function, n₁::Int, n₂::Int)
-#    Ω(x) = Ω₁(x[1:n₁]) && Ω₂(x[(n₁+1):(n₁ + n₂)])
-#    return Ω
-#end
+function prod_domain(Ω₁::Function, Ω₂::Function, n₁::Int, n₂::Int)
+    Ω(x) = Ω₁(x[1:n₁]) && Ω₂(x[(n₁+1):(n₁ + n₂)])
+    return Ω
+end
 
 """
 A function to print mean and variance information.

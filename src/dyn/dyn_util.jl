@@ -17,7 +17,7 @@ return an array that matches the size of all parameters.
 """
 function reshape_deri(flow::DynTrain{T}, fst_m::Vector{T}) where T<:AbstractFloat
 
-    num_of_para = length(flow.train_para_idx)
+    num_of_para = length(flow.num_para)
     vec_deri = Vector{AbstractArray{T}}(undef, num_of_para)
 
     left_idx = 0

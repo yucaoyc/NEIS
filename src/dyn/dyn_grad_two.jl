@@ -46,11 +46,11 @@ function init_DynNNGradTwo(dim::Int, m::Int, W1::Array{T,2}, b1::Array{T,1}, W2:
 end
 
 function init_random_DynNNGradTwo(dim::Int, m::Int; convert=x->Float32.(x),
-        init=glorot_uniform, seed::Int=1)
+        init=glorot_uniform, seed::Int=1, scale=1.0)
     Random.seed!(seed)
     W1 = convert(init(m, dim))
     b1 = convert(init(m))
-    W2 = convert(init(1,m))
+    W2 = convert(scale*init(1,m))
     return init_DynNNGradTwo(dim, m, W1, b1, W2) 
 end
 

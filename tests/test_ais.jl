@@ -33,7 +33,6 @@ fig = Plots.histogram2d(sdx, sdy, size=figsize, fill=true, color=:tofino,
     numsample = 10^5
     βlist = Array(range(0, stop=1.0, length=K+1))
     @time data = map(j->ais_neal(sampler(U₀,1)[:], n, U₀, U₁, K, βlist, τ)[1], 1:numsample);
-    @printf "error %.2E\n" abs(mean(data)/exact_mean-1.0)
     @test abs(mean(data)/exact_mean-1.0) < 0.05
 
     # test Vanilla Importance Sampling

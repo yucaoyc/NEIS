@@ -14,7 +14,7 @@ estimate_offset(tm::AbstractFloat, N::Int) = convert(typeof(N), abs(round(N*tm))
 """
 Suppose d/dt J_t = V_t. Given values of V_t, we return J_t by midpoint rule.
 """
-function integrate_over_time(N::Int, h::T, 
+function integrate_over_time(N::Int, h::T,
         Vf::Vector{T}, Vb::Vector{T}) where T<:AbstractFloat
     Jf = zeros(T, N+1); Jb = zeros(T, N+1)
     for k = 2:(N+1)
@@ -31,7 +31,7 @@ function one_path_dyn_b(para::Dyn,
     test_func::AbstractArray{},
     test_func_para::AbstractArray{},
     N::Int, offset::Int,
-    init_func::Function, init_func_arg, 
+    init_func::Function, init_func_arg,
     solver::Function;
     T = Float64,
     verbose=false, shiftprotect=true)
@@ -76,12 +76,12 @@ end
 Return relative error and variance for statistics.
 """
 function get_data_err_var(U₀::Potential{T}, U₁::Potential{T},
-        para::Dyn, 
-        N::Int64, 
+        para::Dyn,
+        N::Int64,
         offset::Int,
-        numsample::Int; 
+        numsample::Int;
         fixed_sampler_func=nothing,
-        solver=RK4, 
+        solver=RK4,
         shiftprotect=true,
         ptype="threads") where T<:AbstractFloat
 
@@ -98,15 +98,15 @@ function get_data_err_var(U₀::Potential{T}, U₁::Potential{T},
     end
 
     if ptype == "pmap"
-        data = pmap(j->one_path_dyn_b(para, test_func, test_func_para, 
-                                  N, offset, init_func, j, solver, 
+        data = pmap(j->one_path_dyn_b(para, test_func, test_func_para,
+                                  N, offset, init_func, j, solver,
                                   T=T, shiftprotect=shiftprotect)[1],
                     1:numsample)
     else
         data = zeros(T, numsample)
         Threads.@threads for j = 1:numsample
-            data[j] = one_path_dyn_b(para, test_func, test_func_para, 
-                            N, offset, init_func, j, solver, 
+            data[j] = one_path_dyn_b(para, test_func, test_func_para,
+                            N, offset, init_func, j, solver,
                             T=T, shiftprotect=shiftprotect)[1];
         end
     end
@@ -133,30 +133,27 @@ Output:
 - the time derivative [̇dX, dY₁,⋯, dYₘ].
 """
 function optimize_b_dyn(XY::Array{T}, flow::DynTrain{T}) where T<:AbstractFloat
-
     M = flow.total_num_para
     x = XY[:,1]
     dXY = zeros(T, size(XY))
-    # first column
     dXY[:,1] = flow(x)
-    # other columns
     grad_b = ∇b(flow, x)
     dXY[:,2:(1+M)] = grad_b*XY[:,2:(1+M)] + grad_b_wrt_para(flow, x)
-    return dXY 
+    return dXY
 end
 
 """
 test_func_train(...) is a generic template to generate test functions.
 """
-function test_func_train(XY::AbstractMatrix{T}, p::DynTrain{T}, 
+function test_func_train(XY::AbstractMatrix{T}, p::DynTrain{T},
         U₀::Potential{T}, U₁::Potential{T}) where T<:AbstractFloat
 
     num_para = p.num_para
     M = p.total_num_para
 
     x = XY[:,1]
-    ϕ = zeros(T, 3*(1 + M)) 
-    ϕ[1:3] = [-U₀(x), -U₁(x), divg_b(p, x)] 
+    ϕ = zeros(T, 3*(1 + M))
+    ϕ[1:3] = [-U₀(x), -U₁(x), divg_b(p, x)]
 
     ∇U₀ = ∇U(U₀, x)
     ∇U₁ = ∇U(U₁, x)
@@ -176,14 +173,14 @@ end
 It gives a single trajectory estimation for Z₁/Z₀ and
 the derivatives of the secomd moment with respect to parameters.
 """
-function one_path_optimize_dyn_b(flow::DynTrain{T}, 
-    test_func::Function, 
-    test_func_para, 
-    N::Int, offset::Int, 
-    init_func::Function, 
-    init_func_arg, 
-    solver::Function; 
-    verbose::Bool=false, 
+function one_path_optimize_dyn_b(flow::DynTrain{T},
+    test_func::Function,
+    test_func_para,
+    N::Int, offset::Int,
+    init_func::Function,
+    init_func_arg,
+    solver::Function;
+    verbose::Bool=false,
     shiftprotect::Bool=true) where T<:AbstractFloat
 
     n = flow.dim
@@ -193,7 +190,7 @@ function one_path_optimize_dyn_b(flow::DynTrain{T},
     # initialize a particle.
     X₀ = init_func(init_func_arg)
     verbose ? println(X₀) : nothing
-    
+
     Vf,_ = time_integrate((x,t,p) -> optimize_b_dyn(x,p), flow,
         hcat(X₀,zeros(T, n, M)),
         T(0.0), T(1.0), N, solver,
@@ -258,16 +255,17 @@ Input:
 - numsample is the sample size
 
 Output: (fst_m, sec_m) where
-- fst_m: first moment of A, ∂(A^2)/∂θ₁, ∂(A^2)/∂θ₂, ⋯,  ∂(A^2)/∂θₗ 
+- fst_m: first moment of A, ∂(A^2)/∂θ₁, ∂(A^2)/∂θ₂, ⋯,  ∂(A^2)/∂θₗ
 where l is the number of parameters where A is the estimator herein (see paper)
 - sec_m: second moment of the above
 
 """
-function stat_optimize_dyn_b(U₀::Potential{T}, U₁::Potential{T}, 
+function stat_optimize_dyn_b(U₀::Potential{T}, U₁::Potential{T},
         flow::DynTrain{T}, N::Int,
-        offset::Int, numsample::Int, solver::Function; 
+        offset::Int, numsample::Int;
         fixed_sampler_func=nothing,
-        verbose=false) where T<:AbstractFloat
+        solver::Function=RK4,
+        ptype="threads") where T<:AbstractFloat
 
     if fixed_sampler_func == nothing
         # the default way to generate sample
@@ -278,53 +276,60 @@ function stat_optimize_dyn_b(U₀::Potential{T}, U₁::Potential{T},
         init_func = j->fixed_sampler_func(j)
     end
 
-    num_para = flow.num_para 
+    num_para = flow.num_para
     M = flow.total_num_para
     test_func = (x,t,p) -> test_func_train(x, p, U₀, U₁)
     test_func_para = flow
 
-    data = pmap(j-> one_path_optimize_dyn_b(flow, test_func, test_func_para, N,
-                                        offset, init_func, j, solver, verbose=verbose),
-        1:numsample)
-
-    fst_m, sec_m = get_mean_sec_moment(data)
-    if verbose
-        println(fst_m); println(sec_m);
+    if ptype == "pmap"
+        data = pmap(j-> one_path_optimize_dyn_b(flow, test_func, test_func_para, N,
+                                        offset, init_func, j, solver),
+            1:numsample)
+    else
+        data = [zeros(T,1+flow.total_num_para) for j=1:numsample]
+        Threads.@threads for j = 1:numsample
+            data[j] = one_path_optimize_dyn_b(flow, test_func, test_func_para, N,
+                                              offset, init_func, j, solver)
+        end
     end
-    return fst_m, sec_m
+
+    return get_mean_sec_moment(data)
 end
 
 
 """
 train_NN_int
 """
-function train_NN_int(U₀::Potential{T}, U₁::Potential{T}, 
+function train_NN_int(U₀::Potential{T}, U₁::Potential{T},
         flow::DynTrain{T},
         N::Int, numsample_max::Int,
-        train_step::Int, 
-        h::T, decay::T, 
+        train_step::Int,
+        h::T, decay::T,
         gpts::AbstractMatrix{T}, gpts_sampler::Union{Function,Nothing};
         offset::Int=0,
         biased_func=nothing,
-        solver=RK4,
+        solver::Function=RK4,
         ref_value::T=T(1.0),
-        seed::Int64=-1, 
+        seed::Int64=-1,
         verbose::Bool=false, printpara::Bool=false,
-        ρ=T(0.5), c=T(0.5), 
-        max_search_iter::Int=10, 
-        sample_num_repeat::Int=1, 
-        print_sample::Bool=false, 
-        numsample_min::Int=-1, 
-        savepara::Bool=false) where T<:AbstractFloat
+        ρ=T(0.5), c=T(0.5),
+        to_normalize::Bool=true,
+        max_search_iter::Int=10,
+        sample_num_repeat::Int=1,
+        print_sample::Bool=false,
+        numsample_min::Int=-1,
+        savepara::Bool=false,
+        ptype="threads") where T<:AbstractFloat
 
     (offset < 0 || offset > N) ? error("Incorrect offset") : nothing
 
     fixed_sampler_func = j->gpts[:,j]
-    loss_func(m)=get_data_err_var(U₀, U₁, flow, N, offset, m, 
-                                  fixed_sampler_func=fixed_sampler_func, 
-                                  solver=solver)[3]
-    stat_opt_func(m) = stat_optimize_dyn_b(U₀, U₁, flow, N, offset, m, solver, 
-                                   fixed_sampler_func=fixed_sampler_func)
+    loss_func(m)=get_data_err_var(U₀, U₁, flow, N, offset, m,
+                                  fixed_sampler_func=fixed_sampler_func,
+                                  solver=solver, ptype=ptype)[3]
+    stat_opt_func(m) = stat_optimize_dyn_b(U₀, U₁, flow, N, offset, m,
+                                  fixed_sampler_func=fixed_sampler_func,
+                                  solver=solver, ptype=ptype)
 
     return train_NN_template(stat_opt_func, loss_func,
                       flow, numsample_max, train_step,
@@ -332,7 +337,8 @@ function train_NN_int(U₀::Potential{T}, U₁::Potential{T},
                       biased_func=biased_func,
                       ref_value=ref_value, seed=seed,
                       verbose=verbose, printpara=printpara,
-                      ρ=ρ, c=c, max_search_iter=max_search_iter,
+                      ρ=ρ, c=c, to_normalize=to_normalize,
+                      max_search_iter=max_search_iter,
                       sample_num_repeat=sample_num_repeat,
                       print_sample=print_sample,
                       numsample_min=numsample_min, savepara=savepara)

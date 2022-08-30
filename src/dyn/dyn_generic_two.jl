@@ -45,13 +45,13 @@ Initialize a random DynNNGenericTwo.
 """
 function init_random_DynNNGenericTwo(dim::Int, m::Int; 
         convert=x->Float32.(x), init=glorot_uniform, seed::Int=1,
-        σ = softplus, σderi = sigmoid, σsec_deri = sigmoid_deri)
+        σ = softplus, σderi = sigmoid, σsec_deri = sigmoid_deri, scale=1.0)
     n = dim
     Random.seed!(seed)
     W1 = convert(init(m,n))
     b1 = convert(init(m))
-    W2 = convert(init(n,m))
-    b2 = convert(init(n))
+    W2 = convert(scale*init(n,m))
+    b2 = convert(scale*init(n))
     return init_DynNNGenericTwo(dim, m, W1, b1, W2, b2, 
                                 σ=σ, σderi=σderi,σsec_deri=σsec_deri)
 end

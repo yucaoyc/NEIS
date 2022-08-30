@@ -15,6 +15,8 @@ using Tullio
 using Reexport: @reexport
 using Statistics: mean, std
 using Flux: glorot_normal, glorot_uniform
+import Humanize: datasize
+import ProgressMeter: @showprogress
 
 export Potential
 export Dyn, DynTrain
@@ -70,7 +72,7 @@ include("dyn/dyn_util.jl")
 # training optimal flows
 include("opt/opt.jl")
 include("opt/opt_int.jl")
-#include("opt/opt_ode.jl")
+include("opt/opt_ode.jl")
 
 # Generator
 #include("dyn/ode_flow.jl")

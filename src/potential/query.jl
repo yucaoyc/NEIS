@@ -1,6 +1,6 @@
 export QueryNumber, get_query_stat, print_query_stat, reset_query_stat
 
-# An abstract data type for query
+# A data type for query
 QueryNumber = Union{UInt128,Threads.Atomic{UInt128}}
 
 """
@@ -160,9 +160,9 @@ end
 
 function print_query_stat(p::Potential)
     a, b, c, d = get_query_stat(p)
-    @printf("query (U): %12d\n", a)
-    @printf("query (∇U): %11d\n", b)
-    @printf("query (∇²U): %10d\n", c)
-    @printf("query (ΔU): %11d\n", d)
+    @printf("query (U): %10s\n", datasize(a))
+    @printf("query (∇U): %9s\n", datasize(b))
+    @printf("query (∇²U): %8s\n", datasize(c))
+    @printf("query (ΔU): %9s\n", datasize(d))
 end
 
