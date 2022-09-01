@@ -90,6 +90,7 @@ function train_NN_template(stat_opt_func::Function,
         print_sample::Bool=false,
         numsample_min::Int=-1,
         savepara::Bool=false,
+        showprogress::Bool=true,
         allow_early_terminate::Bool=false,
         terminate_value::T=T(1.0e-6)) where T<:AbstractFloat
 
@@ -111,14 +112,14 @@ function train_NN_template(stat_opt_func::Function,
         numsample_min = numsample_max
     end
 
-    @showprogress "Training" for train_iter = 1:train_step
-    #for train_iter = 1:train_step
+    progress = Progress(train_step)
+    for train_iter = 1:train_step
 
         numsample = Int64(round(linear_scheme(T(numsample_min), T(numsample_max),
                                               T(train_iter/train_step))))
 
         if verbose
-            printstyled("Train step $(train_iter) samplesize $(numsample)\n",
+            printstyled("\n Train step $(train_iter) samplesize $(numsample)\n",
                         color=:blue)
         end
 
@@ -134,9 +135,9 @@ function train_NN_template(stat_opt_func::Function,
         end
 
         # evaluate
-        time = @elapsed fst_m, sec_m = stat_opt_func(numsample)
+        time_deri = @elapsed fst_m, sec_m = stat_opt_func(numsample)
         if verbose
-            @printf("Time for evaluating derivatives of loss is %.2f (seconds)\n", time)
+            @printf("Time for evaluating derivatives of loss is %.2f (seconds)\n", time_deri)
         end
 
         est_fst_m[train_iter] = fst_m[1]
@@ -152,12 +153,12 @@ function train_NN_template(stat_opt_func::Function,
         vec_deri = reshape_deri(flow, vec_deri)
         loss_bef = (est_sec_m[train_iter] - est_fst_m[train_iter]^2)
 
+        rela_mean = est_fst_m[train_iter]/ref_value
+        rela_var = loss_bef/ref_value^2
+
         if verbose # print information
-            rela_mean = est_fst_m[train_iter]/ref_value
-            rela_var = loss_bef/ref_value^2
-            info = @sprintf("Relative mean %.2E, Relative variance %.2E\n",
-                            rela_mean, rela_var)
-            printstyled(info, color=:green)
+            printstyled(@sprintf("Relative mean %.2E, Relative variance %.2E\n",
+                                 rela_mean, rela_var), color=:green)
         end
 
         if allow_early_terminate
@@ -171,15 +172,27 @@ function train_NN_template(stat_opt_func::Function,
         # update parameters via line searching.
         if train_iter < train_step
             newh = h/(1+decay*train_iter)
-            time = @elapsed search_iter = armijo_line_search(flow, loss_func, numsample,
+            time_search = @elapsed search_iter = armijo_line_search(flow, loss_func, numsample,
                 vec_deri, grad_norm, newh, loss_bef,
                 ρ=ρ, c=c,
                 max_search_iter=max_search_iter,
                 sample_num_repeat=sample_num_repeat)
             if verbose
-                info = @sprintf("Time for %d line search is %.2f (seconds)\n", search_iter, time)
+                info = @sprintf("Time for %d line search is %.2f (seconds)\n", search_iter, time_search)
                 printstyled(info, color=:green)
             end
+        else
+            time_search = 0.0
+        end
+        if showprogress
+            showvalues = [(:iter,train_iter),
+                          (:mean, pretty_float(rela_mean)),
+                          (:var, pretty_float(rela_var)),
+                          (:time_to_compute_derivative, pretty_float(time_deri))]
+            if max_search_iter > 0
+                show_values.append((:time_for_line_search, pretty_float(time_search)))
+            end
+            ProgressMeter.next!(progress; showvalues=showvalues)
         end
 
         printpara ? println(flow.para_list) : nothing

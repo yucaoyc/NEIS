@@ -16,7 +16,7 @@ using Reexport: @reexport
 using Statistics: mean, std
 using Flux: glorot_normal, glorot_uniform
 import Humanize: datasize
-import ProgressMeter: @showprogress
+using ProgressMeter
 
 export Potential
 export Dyn, DynTrain
@@ -29,7 +29,7 @@ include("util/grid.jl")
 include("util/ode_solver.jl")
 include("util/traj.jl")
 
-# todo: 
+# todo:
 # 1. vectorized implementation of funnel.jl
 #
 # Potential functions
@@ -73,6 +73,9 @@ include("dyn/dyn_util.jl")
 include("opt/opt.jl")
 include("opt/opt_int.jl")
 include("opt/opt_ode.jl")
+
+# budget plan
+#include("opt/budget.jl")
 
 # Generator
 #include("dyn/ode_flow.jl")

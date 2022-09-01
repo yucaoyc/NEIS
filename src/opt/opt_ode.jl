@@ -224,7 +224,8 @@ function train_NN_ode(U₀::Potential{T}, U₁::Potential{T},
         print_sample::Bool=false,
         numsample_min::Int=-1,
         savepara::Bool=false,
-        ptype="threads") where T<:AbstractFloat
+        ptype="threads",
+        showprogress=true) where T<:AbstractFloat
 
     fixed_sampler_func = j->gpts[:,j]
     stat_opt_func(m) = stat_optimize_dyn_b(U₀, U₁, flow, N, m,
@@ -246,5 +247,5 @@ function train_NN_ode(U₀::Potential{T}, U₁::Potential{T},
                       sample_num_repeat=sample_num_repeat,
                       print_sample=print_sample,
                       numsample_min=numsample_min,
-                      savepara=savepara)
+                      savepara=savepara,showprogress=showprogress)
 end

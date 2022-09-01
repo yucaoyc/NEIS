@@ -1,10 +1,10 @@
-export load_eg1, 
+export load_eg1,
        load_eg2,
        load_eg3
 
-function load_eg1(λ::T; n::Int=2, #λ::T=T(5.0), 
-        σsq::T=T(0.1), 
-        weight::Array{T}=T.([0.2, 0.8]), 
+function load_eg1(λ::T; n::Int=2, #λ::T=T(5.0),
+        σsq::T=T(0.1),
+        weight::Array{T}=T.([0.2, 0.8]),
         count_mode=:unsafe_count) where T <: AbstractFloat
 
     μ₀ = zeros(T,n)
@@ -14,13 +14,13 @@ function load_eg1(λ::T; n::Int=2, #λ::T=T(5.0),
     μlist = [T.([λ,0]),T.([0.0,-λ])]
     Σlist = [Diagonal(σsq*ones(T,n)) for i = 1:2]
     U₁ = generate_mixGaussian(n,μlist,Σlist,weight,count_mode=count_mode)
-    
+
     exact_mean = dot(weight, [sqrt(det(σ)) for σ in Σlist])/sqrt(det(Σ₀))
     return U₀, U₁, exact_mean
 end
 
 # Todo: The implementation for eg2 can be further accelerated (a very minor thing to do though).
-function load_eg2(n::Int, λ::T; σsq₁::T=T(0.1), σsq₂::T=T(0.5), 
+function load_eg2(n::Int, λ::T; σsq₁::T=T(0.1), σsq₂::T=T(0.5),
         count_mode=:unsafe_count) where T<:AbstractFloat
 
     num_pts = 4
@@ -53,9 +53,9 @@ Correct the exact value
 Count the effect of domain into consideration
 For the Neal's funnel (10D) only.
 """
-function partition_reduction_percent(Ωq::Function, 
+function partition_reduction_percent(Ωq::Function,
         numsample_domain::Int, n::Int, σf::T) where T<:AbstractFloat
-    
+
     v = zeros(T,numsample_domain)
     for i = 1:numsample_domain
         x0 = randn(T)*σf
@@ -65,13 +65,13 @@ function partition_reduction_percent(Ωq::Function,
     return sum(v)/numsample_domain
 end
 
-function load_eg3(n::Int, σf::T; σ₀::T=T(1.0), radius=T(25.0), 
+function load_eg3(n::Int, σf::T; σ₀::T=T(1.0), radius=T(25.0),
         count_mode=:unsafe_count) where T<:AbstractFloat
     Ωq(x) = domain_ball(x, radius)
     U₀ = Gaussian(n, zeros(T,n), σ₀^2)
     UU₁ = Funnel(n, σf)
     exact_mean = σf/σ₀^n
-    U₁ = RestrictedPotential(n, UU₁, Ωq, count_mode=count_mode) 
+    U₁ = RestrictedPotential(n, UU₁, Ωq, count_mode=count_mode)
 
     # correct exact value due to restricted domain.
     percent_vec = map((j)->partition_reduction_percent(Ωq, 10^6, n, σf), 1:10)
@@ -82,5 +82,5 @@ function load_eg3(n::Int, σf::T; σ₀::T=T(1.0), radius=T(25.0),
     end
     exact_mean *= reduce_percent
 
-    return U₀, U₁, exact_mean
+    return U₀, U₁, exact_mean, reduce_percent
 end

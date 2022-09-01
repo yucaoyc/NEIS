@@ -1,10 +1,10 @@
-export RK4, 
+export RK4,
        MM,
        time_integrate
 """
 Run Runge-Kutta-4 for dynamics f(x,t) at position x0 and time t, to the next time t+h
 """
-function RK4(f::Function, x0::Union{Tuple,Array}, 
+function RK4(f::Function, x0::Union{Tuple,Array},
         t::T, h::T, para::Any) where T<:AbstractFloat
     k1 = f(x0, t, para)
     k2 = f(x0 .+ h/2 .* k1, t+h/2, para)
@@ -31,16 +31,16 @@ with initial condition Xₐ at time a.
 N is the total number of steps
 We support a list of test functions.
 
-Version 1: 
+Version 1:
 - testfunc(x, t, test_func_para) -> Real number, is a list of generic functions.
 
-Version 2: 
+Version 2:
 - testfunc(x, t, test_func_para) -> a vector of dimension m.
 
 Version 3:
 - No test function and only propagate the ODE.
 """
-function time_integrate(ode_dyn::Function, para::Any, 
+function time_integrate(ode_dyn::Function, para::Any,
     Xₐ::Union{Array,Tuple},
     a::T, b::T, N::Int,
     ode_solver::Function,
@@ -68,9 +68,9 @@ end
 
 function time_integrate(ode_dyn::Function, para::Any, Xₐ::Array{T},
     a::T, b::T, N::Int,
-    ode_solver::Function, 
+    ode_solver::Function,
     test_func,
-    test_func_para, 
+    test_func_para,
     m::Int) where T<:AbstractFloat
 
     func_values = zeros(T, m, N+1)
@@ -88,7 +88,7 @@ function time_integrate(ode_dyn::Function, para::Any, Xₐ::Array{T},
 end
 
 
-function time_integrate(ode_dyn::Function, para::Any, 
+function time_integrate(ode_dyn::Function, para::Any,
         Xₐ::Union{Tuple, Array},
         a::T, b::T, N::Int, ode_solver) where T<:AbstractFloat
 

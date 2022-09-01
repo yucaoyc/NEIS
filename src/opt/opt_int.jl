@@ -319,7 +319,8 @@ function train_NN_int(U₀::Potential{T}, U₁::Potential{T},
         print_sample::Bool=false,
         numsample_min::Int=-1,
         savepara::Bool=false,
-        ptype="threads") where T<:AbstractFloat
+        ptype="threads",
+        showprogress=true) where T<:AbstractFloat
 
     (offset < 0 || offset > N) ? error("Incorrect offset") : nothing
 
@@ -341,5 +342,6 @@ function train_NN_int(U₀::Potential{T}, U₁::Potential{T},
                       max_search_iter=max_search_iter,
                       sample_num_repeat=sample_num_repeat,
                       print_sample=print_sample,
-                      numsample_min=numsample_min, savepara=savepara)
+                      numsample_min=numsample_min, savepara=savepara,
+                      showprogress=showprogress)
 end

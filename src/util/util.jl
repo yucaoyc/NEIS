@@ -1,11 +1,11 @@
-export get_resource, 
+export get_resource,
        get_train_stat,
        print_train_stat,
-       get_ndims, 
+       get_ndims,
        plot_setup,
-       randHermitian, 
-       remove_nan, 
-       get_relative_stats, 
+       randHermitian,
+       remove_nan,
+       get_relative_stats,
        integrate_over_time,
        domain_ball,
        domain_rectangle,
@@ -15,6 +15,7 @@ export get_resource,
        repeat_experiment,
        get_mean_sec_moment
 export divide_col, multiply_col
+
 
 """
 Divide each column of a by b, i.e., return a[:,i]/b[i] as column i.
@@ -39,7 +40,7 @@ end
 Get CPU information, number of processors used, and number of threads.
 """
 function get_resource()
-    return Dict{Symbol,Any}(:cpu=>Sys.cpu_info()[1].model, 
+    return Dict{Symbol,Any}(:cpu=>Sys.cpu_info()[1].model,
                 :nprocs=>nprocs(),
                 :nthreads=>Threads.nthreads())
 end
@@ -58,19 +59,22 @@ function get_train_stat(train_time, U₁)
     return info
 end
 
-function print_train_stat(info)
+function print_train_stat(info; type=:nonzero)
     @printf("cpu is %s\n", info[:cpu])
-    @printf("nprocs=%3d, nthreads=%3d\n", info[:nprocs], info[:nthreads])
-    @printf("runtime %10.2f (seconds)\n", info[:runtime])
+    @printf("nprocs=%d, nthreads=%d\n", info[:nprocs], info[:nthreads])
+    @printf("runtime %.2f (seconds)\n", info[:runtime])
     a, b, c, d = info[:query]
-    @printf("query (U): %10s\n", datasize(a))
-    @printf("query (∇U): %9s\n", datasize(b))
-    @printf("query (∇²U): %8s\n", datasize(c))
-    @printf("query (ΔU): %9s\n", datasize(d))
-    #@printf("query (U): %12d\n", a)
-    #@printf("query (∇U): %11d\n", b)
-    #@printf("query (∇²U): %10d\n", c)
-    #@printf("query (ΔU): %11d\n", d)
+    if type == :full
+        @printf("query (U): %10s\n", datasize(a))
+        @printf("query (∇U): %9s\n", datasize(b))
+        @printf("query (∇²U): %8s\n", datasize(c))
+        @printf("query (ΔU): %9s\n", datasize(d))
+    elseif type == :nonzero
+        a > 0 ? @printf("query (U): %10s\n", datasize(a)) : nothing
+        b > 0 ? @printf("query (∇U): %9s\n", datasize(b)) : nothing
+        c > 0 ? @printf("query (∇²U): %8s\n", datasize(c)) : nothing
+        d > 0 ? @printf("query (ΔU): %9s\n", datasize(d)) : nothing
+    end
 end
 
 """
@@ -84,8 +88,8 @@ A default plot setup.
 """
 function plot_setup()
     gr()
-    default(titlefont = (12, "times"), legendfontsize=8, 
-        legend_font_family="times", guidefont = (11, "times"), 
+    default(titlefont = (12, "times"), legendfontsize=8,
+        legend_font_family="times", guidefont = (11, "times"),
         fg_legend = :transparent);
 end
 
@@ -151,7 +155,7 @@ end
 An indicator function for a rectangular domain specified by lb (lower bound)
 and ub (upper bound).
 """
-function domain_rectangle(x::Vector{T}, 
+function domain_rectangle(x::Vector{T},
         lb::Union{Vector{T},T}, ub::Union{T,Vector{T}}) where T<:AbstractFloat
     r = (x .<= ub) .& (x .>= lb)
     return prod(r)
@@ -189,8 +193,8 @@ end
 """
 Repeat the experiment specified by fun.
 """
-function repeat_experiment(fun::Function, numsample::Int, numrepeat::Int, 
-        gpts::Array{T}, gpts_sampler::Function) where T<:AbstractFloat
+function repeat_experiment(fun::Function, numsample::Int, numrepeat::Int,
+        gpts::AbstractMatrix{T}, gpts_sampler::Function) where T<:AbstractFloat
     v = zeros(T, numrepeat)
     test_update = gpts[:,1]
     for i = 1:numrepeat
@@ -201,7 +205,7 @@ function repeat_experiment(fun::Function, numsample::Int, numrepeat::Int,
         if norm(gpts[:,1] - test_update) < 1.0e-4
             @warn "The sample points may not be appropriately updated! Make sure this is what you want!"
         end
-        v[i] = fun(numsample) 
+        v[i] = fun(numsample)
     end
     return v
 end
@@ -220,4 +224,12 @@ function get_mean_sec_moment(data::Vector{Vector{T}}) where T<:AbstractFloat
     sec_m /= numsample
 
     return fst_m, sec_m
+end
+
+function pretty_float(f::AbstractFloat)
+    if abs(f) > 1.0e3 || abs(f) < 1.0e-3
+        @sprintf("%1.3E", f)
+    else
+        @sprintf("%1.3f", f)
+    end
 end

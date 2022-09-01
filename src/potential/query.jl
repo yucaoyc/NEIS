@@ -1,4 +1,4 @@
-export QueryNumber, get_query_stat, print_query_stat, reset_query_stat
+export QueryNumber, get_query_stat, print_query_stat, reset_query_stat, verify_budget
 
 # A data type for query
 QueryNumber = Union{UInt128,Threads.Atomic{UInt128}}
@@ -158,11 +158,38 @@ function get_query_stat(p::Potential)
     end
 end
 
-function print_query_stat(p::Potential)
+"""
+If type == :nonzero, we only print non-zero entries;
+If type == :full, we print all entries.
+"""
+function print_query_stat(p::Potential; type=:nonzero)
     a, b, c, d = get_query_stat(p)
-    @printf("query (U): %10s\n", datasize(a))
-    @printf("query (∇U): %9s\n", datasize(b))
-    @printf("query (∇²U): %8s\n", datasize(c))
-    @printf("query (ΔU): %9s\n", datasize(d))
+    if type == :full
+        @printf("query (U): %10s\n", datasize(a))
+        @printf("query (∇U): %9s\n", datasize(b))
+        @printf("query (∇²U): %8s\n", datasize(c))
+        @printf("query (ΔU): %9s\n", datasize(d))
+    elseif type == :nonzero
+        a > 0 ? @printf("query (U): %10s\n", datasize(a)) : nothing
+        b > 0 ? @printf("query (∇U): %9s\n", datasize(b)) : nothing
+        c > 0 ? @printf("query (∇²U): %8s\n", datasize(c)) : nothing
+        d > 0 ? @printf("query (ΔU): %9s\n", datasize(d)) : nothing
+    else
+        @error("Please use either :nonzero or :full in print_query_stat!")
+    end
 end
 
+########################################
+# Verify query
+#
+function verify_budget(U::Potential, query_budget::Int; lb=0.98, ub=1.01)
+    empirical = maximum(get_query_stat(U))
+    if empirical < query_budget*lb
+        @warn("Use fewer queries than allowed!")
+    elseif empirical > query_budget*ub
+        @error("Use too many queries than allowed!")
+    else
+        # everything is good
+        printstyled("Pass query test!\n", color=:green)
+    end
+end

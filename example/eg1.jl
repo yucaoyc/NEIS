@@ -33,7 +33,7 @@ gpts_sampler = ()->randn(T, n)
 
 ℓ = 2
 #m_list = [10]; model_list = [2]; seed_list = [1]
-m_list = [10, 20]; model_list = [1, 2]; seed_list = [1, 2]
+m_list = [10, 20]; model_list = [1, 2]; seed_list = [1, 2, 3]
 
 # add bias into the training.
 if biased
@@ -50,31 +50,30 @@ train_paras = Dict(:ref_value => exact_mean,
         :numsample_min => numsample_max,
         :biased_func => biased_func)
 
-convert = x->T.(x)
-
 if to_train
-    for (m, model_num, seed) in Iterators.product(m_list, model_list, seed_list)
+    for (seed, m, model_num) in Iterators.product(seed_list, m_list, model_list)
 
-        #if train_paras[:verbose]
         @printf("m = %3d, model number = %1d, seed = %2d\n", m, model_num, seed)
-        #end
+
         Random.seed!(seed)
+
         # file names
         casename =  @sprintf("case_%d_model_%d_%d_%d_%d_%d_%d_%d",
                      testcasenum, model_num,
                      n, N, numsample_max, m, ℓ, seed)
+
         # use a optimized implementation for better speed
         if model_num == 1 && ℓ == 2
-            flow = init_random_DynNNGenericTwo(n, m, convert=convert, scale=scale)
+            flow = init_random_DynNNGenericTwo(n, m, convert=x->T.(x), scale=scale)
         elseif model_num == 2 && ℓ == 2
-            flow = init_random_DynNNGradTwo(n, m, convert=convert, scale=scale)
+            flow = init_random_DynNNGradTwo(n, m, convert=x->T.(x), scale=scale)
         else
             @error("Not implemented yet")
         end
         flow_bef = deepcopy(flow)
 
+        # reset statistics and perform the training
         reset_query_stat(U₁)
-        # training part
         train_time = @elapsed est_fst_m, est_sec_m, est_grad_norm, est_para =
                 train_NN_ode(U₀, U₁, flow, N, numsample_max,
                 train_step, η, decay, gpts, gpts_sampler;
@@ -82,6 +81,7 @@ if to_train
         train_stat = get_train_stat(train_time, U₁)
         #print_train_stat(train_stat)
 
+        # save data
         fn = casename*"_training_data.jld2"
         @save(fn, est_fst_m, est_sec_m, est_grad_norm, flow,
               flow_bef, exact_mean, train_step, est_para, train_stat)
