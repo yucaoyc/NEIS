@@ -50,7 +50,7 @@ end
 # Implementation of classical methods
 include("classical_methods/vanilla.jl") # vanilla IS.
 include("classical_methods/mala.jl")
-include("classical_methods/smc.jl") # AIS only. Its SMC version is not implemented yet.
+include("classical_methods/ais_neal.jl")
 
 # Flow dynamics
 abstract type Dyn end

@@ -24,20 +24,25 @@ sdx = [item[1] for item in state]
 sdy = [item[2] for item in state]
 
 figsize = (300,200)
-fig = Plots.histogram2d(sdx, sdy, size=figsize, fill=true, color=:tofino, 
+fig = Plots.histogram2d(sdx, sdy, size=figsize, fill=true, color=:tofino,
     left_margin=20px, right_margin=20px, normed=true, nbinsx=30, nbinsy=30)
 
 @testset "test ais and direct importance sampling" begin
     # test AIS
+    reset_query_stat(U₁)
     K = 10
     numsample = 10^5
     βlist = Array(range(0, stop=1.0, length=K+1))
-    @time data = map(j->ais_neal(sampler(U₀,1)[:], n, U₀, U₁, K, βlist, τ)[1], 1:numsample);
-    @test abs(mean(data)/exact_mean-1.0) < 0.05
+    @time ais_estimate = ais_neal(U₀, U₁, K, numsample)[2]
+    @test abs(ais_estimate/exact_mean-1.0) < 0.05
+    print_query_stat(U₁)
+    stat = get_query_stat(U₁)
+    @test norm(stat[1] - 3*numsample*K) < 1.0e-5
+    @test norm(stat[2] - 2*numsample*K) < 1.0e-5
 
     # test Vanilla Importance Sampling
-    @time _, vanilla_m, vanilla_var = vanilla_importance_sampling(U₀, U₁, numsample*100);
-    @test abs(vanilla_m/exact_mean-1.0) < 0.05
+    @time vanilla_estimate = vanilla_importance_sampling(U₀, U₁, numsample*100)[2]
+    @test abs(vanilla_estimate/exact_mean-1.0) < 0.05
 end
 
 fig

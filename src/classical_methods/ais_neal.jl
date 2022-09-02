@@ -1,4 +1,4 @@
-export ais_neal, linear_scheme, get_data_err_var_ais_neal
+export ais_neal, linear_scheme
 
 """
 we use the usual interpolation
@@ -21,23 +21,22 @@ function ais_neal(x::Array{T}, n::Int,
         K::Int, βlist::Array{T}, τ::T;
         scheme::Function=linear_scheme) where T <: AbstractFloat
 
-    #u(x, β) = scheme(U₀.U(x), U₁.U(x), β)
-    u(x, β) = scheme(U(U₀,x), U(U₁,x), β)
-    #gradu(x, β) = scheme(U₀.gradU(x), U₁.gradU(x), β)
+    u(x, β) = scheme(U₀(x), U₁(x), β)
     gradu(x, β) = scheme(∇U(U₀,x), ∇U(U₁,x), β)
 
     accept = zeros(T,K)
     G = T(1.0)
     for ℓ = 1:K
-        G *= exp(-u(x, βlist[ℓ+1]) + u(x, βlist[ℓ]))
-        x, accept[ℓ] = MALA_OLD(n, u, gradu, τ, x, βlist[ℓ+1])
+        u_bef = u(x, βlist[ℓ])
+        u_aft = u(x, βlist[ℓ+1])
+        G *= exp(-u_aft + u_bef)
+        x, accept[ℓ] = MALA_OLD(n, u, gradu, τ, x, args=βlist[ℓ+1], uxargs=u_aft)
     end
 
     return G, accept
 end
 
-
-function get_data_err_var_ais_neal(U₀::Potential{T},
+function ais_neal(U₀::Potential{T},
         U₁::Potential{T},
         K::Int, numsample::Int;
         τ::Union{T,Nothing}=nothing,
@@ -60,5 +59,5 @@ function get_data_err_var_ais_neal(U₀::Potential{T},
     end
     m = mean(data)
     msec = mean(data.^2)
-    return m, msec - m^2
+    return data, m, msec - m^2
 end
