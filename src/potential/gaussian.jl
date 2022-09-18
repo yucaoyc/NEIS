@@ -5,7 +5,7 @@ mutable struct Gaussian{T<:AbstractFloat} <: Potential{T}
     dim::Int
     μ::Vector{T}
     cov::Union{T,AbstractMatrix{T},Diagonal{T}}
-    covinv::Union{T,AbstractMatrix{T},Diagonal{T}} # for computing U, etc. 
+    covinv::Union{T,AbstractMatrix{T},Diagonal{T}} # for computing U, etc.
     covhalf::Union{T,AbstractMatrix{T},Diagonal{T}} # for sampling
     laplace::T
     query_u::QueryNumber
@@ -15,17 +15,27 @@ mutable struct Gaussian{T<:AbstractFloat} <: Potential{T}
     count_mode::Symbol
 end
 
-function Gaussian(dim::Int, μ::Vector{T}, 
-        cov::Union{T,Matrix{T},Diagonal{T}}; 
+function Gaussian(dim::Int, μ::Vector{T},
+        cov::Union{T,AbstractMatrix{T},Diagonal{T}};
         count_mode=:unsafe_count) where T<:AbstractFloat
     safe = get_safe_mode(count_mode)
-    return Gaussian(dim, μ, cov, inv(cov), cov^(T(1/2)), 
-                    get_laplace_gaussian(cov,dim), 
-                    set_query_number(0, safe=safe), 
-                    set_query_number(0, safe=safe), 
-                    set_query_number(0, safe=safe), 
+    return Gaussian(dim, μ, cov, inv(cov), half_matrix(cov),
+                    get_laplace_gaussian(cov,dim),
+                    set_query_number(0, safe=safe),
+                    set_query_number(0, safe=safe),
+                    set_query_number(0, safe=safe),
                     set_query_number(0, safe=safe),
                     count_mode)
+end
+
+function half_matrix(cov::Union{T,AbstractMatrix{T}}) where T<:AbstractFloat
+    m = cov^(T(1/2))
+    r = real.(m)
+    i = imag.(m)
+    if maximum(abs.(i)) > 1.0e-8
+        @warn("Precision error in half_matrix.")
+    end
+    return r
 end
 
 function get_laplace_gaussian(cov::Union{Matrix{T},Diagonal{T}}, dim::Int) where T<:AbstractFloat

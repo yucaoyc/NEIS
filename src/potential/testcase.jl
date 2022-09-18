@@ -16,7 +16,9 @@ function load_eg1(λ::T; n::Int=2, #λ::T=T(5.0),
     U₁ = generate_mixGaussian(n,μlist,Σlist,weight,count_mode=count_mode)
 
     exact_mean = dot(weight, [sqrt(det(σ)) for σ in Σlist])/sqrt(det(Σ₀))
-    return U₀, U₁, exact_mean
+
+    vanilla_m, _, vanilla_var = mean_msec_var(weight, μlist, Σlist)
+    return U₀, U₁, exact_mean, vanilla_var/vanilla_m^2
 end
 
 # Todo: The implementation for eg2 can be further accelerated (a very minor thing to do though).
@@ -45,7 +47,8 @@ function load_eg2(n::Int, λ::T; σsq₁::T=T(0.1), σsq₂::T=T(0.5),
         error("Incorrect value in eg2!")
     end
 
-    return U₀, U₁, exact_mean
+    vanilla_m, _, vanilla_var = mean_msec_var(weight, center_pts, Σlist)
+    return U₀, U₁, exact_mean, vanilla_var/vanilla_m^2
 end
 
 """

@@ -162,18 +162,18 @@ end
 If type == :nonzero, we only print non-zero entries;
 If type == :full, we print all entries.
 """
-function print_query_stat(p::Potential; type=:nonzero)
+function print_query_stat(p::Potential; type=:nonzero, repeat_num::Int=1)
     a, b, c, d = get_query_stat(p)
     if type == :full
-        @printf("query (U): %10s\n", datasize(a))
-        @printf("query (∇U): %9s\n", datasize(b))
-        @printf("query (∇²U): %8s\n", datasize(c))
-        @printf("query (ΔU): %9s\n", datasize(d))
+        @printf("query (U): %10s\n", datasize(a/repeat_num))
+        @printf("query (∇U): %9s\n", datasize(b/repeat_num))
+        @printf("query (∇²U): %8s\n", datasize(c/repeat_num))
+        @printf("query (ΔU): %9s\n", datasize(d/repeat_num))
     elseif type == :nonzero
-        a > 0 ? @printf("query (U): %10s\n", datasize(a)) : nothing
-        b > 0 ? @printf("query (∇U): %9s\n", datasize(b)) : nothing
-        c > 0 ? @printf("query (∇²U): %8s\n", datasize(c)) : nothing
-        d > 0 ? @printf("query (ΔU): %9s\n", datasize(d)) : nothing
+        a > 0 ? @printf("query (U): %10s\n", datasize(a/repeat_num)) : nothing
+        b > 0 ? @printf("query (∇U): %9s\n", datasize(b/repeat_num)) : nothing
+        c > 0 ? @printf("query (∇²U): %8s\n", datasize(c/repeat_num)) : nothing
+        d > 0 ? @printf("query (ΔU): %9s\n", datasize(d/repeat_num)) : nothing
     else
         @error("Please use either :nonzero or :full in print_query_stat!")
     end
@@ -182,8 +182,12 @@ end
 ########################################
 # Verify query
 #
-function verify_budget(U::Potential, query_budget::Int; lb=0.98, ub=1.01)
-    empirical = maximum(get_query_stat(U))
+function verify_budget(U::Potential, query_budget::Int; lb=0.98, ub=1.01, grad_only=false)
+    if grad_only
+        empirical = get_query_stat(U)[2]
+    else
+        empirical = maximum(get_query_stat(U))
+    end
     if empirical < query_budget*lb
         @warn("Use fewer queries than allowed!")
     elseif empirical > query_budget*ub

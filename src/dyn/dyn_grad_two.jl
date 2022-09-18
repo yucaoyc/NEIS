@@ -25,7 +25,10 @@ function init_DynNNGradTwo(dim::Int, m::Int, W1::Array{T,2}, b1::Array{T,1}, W2:
         σth_deri=sigmoid_sec_deri) where T <: AbstractFloat
 
     para_list = [W1, b1, W2]
-    V(x, W1, b1, W2) = W2*σ.(W1*x .+ b1)
+
+    function V(x, W1, b1, W2)
+        return W2*σ.(W1*x .+ b1)
+    end
 
     function f(x::Array{T}, W1::Matrix{T}, b1::Vector{T}, W2::Matrix{T})
         y = W1*x .+ b1

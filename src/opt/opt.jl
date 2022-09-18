@@ -188,7 +188,9 @@ function train_NN_template(stat_opt_func::Function,
             showvalues = [(:iter,train_iter),
                           (:mean, pretty_float(rela_mean)),
                           (:var, pretty_float(rela_var)),
-                          (:time_to_compute_derivative, pretty_float(time_deri))]
+                          (:time_to_compute_derivative, pretty_float(time_deri)),
+                          (:loss_divide_grad_norm, pretty_float(loss_bef/grad_norm)),
+                          (:lr, pretty_float(h/(1+decay*train_iter)))]
             if max_search_iter > 0
                 show_values.append((:time_for_line_search, pretty_float(time_search)))
             end

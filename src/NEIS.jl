@@ -75,7 +75,7 @@ include("opt/opt_int.jl")
 include("opt/opt_ode.jl")
 
 # budget plan
-#include("opt/budget.jl")
+include("opt/budget.jl")
 
 # Generator
 #include("dyn/ode_flow.jl")

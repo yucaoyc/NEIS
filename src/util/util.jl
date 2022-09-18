@@ -86,20 +86,32 @@ get_ndims(n,m,ℓ) = vcat([n],m*ones(Int64,ℓ-1),[n])
 """
 A default plot setup.
 """
-function plot_setup()
-    gr()
-    default(titlefont = (12, "times"), legendfontsize=8,
-        legend_font_family="times", guidefont = (11, "times"),
+function plot_setup(; titlefontsize=12, legendfontsize=9, guifontsize=11)
+    default(titlefont = (titlefontsize, "times"), legendfontsize=legendfontsize,
+        legend_font_family="times", guidefont = (guifontsize, "times"),
         fg_legend = :transparent);
 end
 
 """
 Return a n-by-n random Hermitian matrix with spectrum between [σmin, σmax]
 """
-function randHermitian(n, σmin, σmax)
-    Q , _ = qr(randn(n,n))
-    D = Diagonal(rand(n)*(σmax-σmin) .+ σmin)
-    return Q*D*transpose(Q)
+function randHermitian(n, σmin::T, σmax::T) where T<:AbstractFloat
+    trial_num = 1
+    while (trial_num < 10)
+        Q , _ = qr(rand(T, n, n))
+        D = Diagonal(rand(T, n)*(σmax-σmin) .+ σmin)
+        #M = Q*D*transpose(Q)
+        M = Q*D*Q'
+        if typeof(M) <: AbstractMatrix{T}
+            return M
+        else
+            trial_num += 1
+            continue
+        end
+    end
+    if trial_num == 10
+        @error("Problem with randHermitian function.")
+    end
 end
 
 """
