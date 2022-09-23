@@ -5,7 +5,7 @@ export backward_aug,
        ODE_for_estimator_and_grad,
        compute_estimator_and_gradient,
        get_data_err_var,
-       get_rela_err_var,
+#       get_rela_err_var,
        stat_optimize_dyn_b,
        train_NN_ode
 
@@ -124,9 +124,12 @@ end
 
 function get_data_err_var(U₀::Potential{T}, U₁::Potential{T},
         flow::Dyn, N::Int, numsample::Int;
+        ϕname="msq", ϕϵ=T(1.0e-3),
         fixed_sampler_func=nothing,
         solver=RK4,
         ptype="threads") where T<:AbstractFloat
+
+    ϕ = get_Φ(ϕname, ϕϵ)
 
     if fixed_sampler_func == nothing
         # the default way to generate sample
@@ -152,30 +155,35 @@ function get_data_err_var(U₀::Potential{T}, U₁::Potential{T},
     end
 
     m = mean(data)
-    m2 = mean(data.^2)
-    return data, m, m2 - m^2
+    #m2 = mean(data.^2)
+    m2 = mean(ϕ.f(data))
+    #return data, m, m2 - m^2
+    return data, m, m2 - ϕ.f(m)
 end
 
-function get_rela_err_var(U₀::Potential{T},
-        U₁::Potential{T}, flow::Dyn,
-        N::Int64, numsample::Int, exact_mean::T;
-        fixed_sampler_func=nothing,
-        solver=RK4,
-        ptype="threads") where T<:AbstractFloat
-
-    _, m, var = get_data_err_var(U₀, U₁, flow, N, numsample,
-                                fixed_sampler_func=fixed_sampler_func,
-                                solver=solver,
-                                ptype=ptype)
-    return abs(m/exact_mean - 1), abs(var/exact_mean^2)
-end
+#function get_rela_err_var(U₀::Potential{T},
+#        U₁::Potential{T}, flow::Dyn,
+#        N::Int64, numsample::Int, exact_mean::T;
+#        fixed_sampler_func=nothing,
+#        solver=RK4,
+#        ptype="threads") where T<:AbstractFloat
+#
+#    _, m, var = get_data_err_var(U₀, U₁, flow, N, numsample,
+#                                fixed_sampler_func=fixed_sampler_func,
+#                                solver=solver,
+#                                ptype=ptype)
+#    return abs(m/exact_mean - 1), abs(var/exact_mean^2)
+#end
 
 function stat_optimize_dyn_b(U₀::Potential{T},
         U₁::Potential{T}, flow::Dyn,
         N::Int, numsample::Int;
+        ϕname="msq", ϕϵ::T=T(1.0e-3),
         fixed_sampler_func=nothing,
         solver=RK4,
         ptype="threads") where T<:AbstractFloat
+
+    ϕ = get_Φ(ϕname, ϕϵ)
 
     if fixed_sampler_func == nothing
         # the default way to generate sample
@@ -189,16 +197,19 @@ function stat_optimize_dyn_b(U₀::Potential{T},
     if ptype=="pmap"
         data = pmap(j->compute_estimator_and_gradient(flow,
                   init_func(j), U₀, U₁, N, solver=solver)[3:4], 1:numsample)
-        V = [vcat(item[1], 2*item[1]*item[2]) for item in data]
+        # V = [vcat(item[1], 2*item[1]*item[2]) for item in data]
+        V = [vcat(item[1], ϕ.fderi(item[1])*item[2]) for item in data]
     else
         data = [zeros(T,1+flow.total_num_para) for j=1:numsample]
         Threads.@threads for j = 1:numsample
             item = compute_estimator_and_gradient(flow,
                 init_func(j), U₀, U₁, N, solver=solver)[3:4]
-            data[j] = vcat(item[1], 2*item[1]*item[2])
+            # data[j] = vcat(item[1], 2*item[1]*item[2])
+            data[j] = vcat(item[1], ϕ.fderi(item[1])*item[2])
         end
     end
-    return get_mean_sec_moment(data)
+    # return get_mean_sec_moment(data)
+    return get_mean_entropy(data, ϕ)
 end
 
 
@@ -211,6 +222,7 @@ function train_NN_ode(U₀::Potential{T}, U₁::Potential{T},
         train_step::Int,
         h::T, decay::T,
         gpts::AbstractMatrix{T}, gpts_sampler::Union{Function,Nothing};
+        ϕname="msq", ϕϵ=T(1.0e-3),
         biased_func::Union{Function,Nothing}=nothing,
         solver::Function=RK4,
         ref_value::T=T(1.0),
@@ -225,19 +237,23 @@ function train_NN_ode(U₀::Potential{T}, U₁::Potential{T},
         numsample_min::Int=-1,
         savepara::Bool=false,
         ptype="threads",
-        showprogress=true) where T<:AbstractFloat
+        showprogress=true,
+        compute_rela_divg=true) where T<:AbstractFloat
 
+    ϕ = get_Φ(ϕname, ϕϵ)
     fixed_sampler_func = j->gpts[:,j]
     stat_opt_func(m) = stat_optimize_dyn_b(U₀, U₁, flow, N, m,
+                            ϕname=ϕname, ϕϵ=ϕϵ,
                             fixed_sampler_func=fixed_sampler_func,
                             solver=solver, ptype=ptype)
     loss_func(m) = get_data_err_var(U₀, U₁, flow, N, m,
+                            ϕname=ϕname, ϕϵ=ϕϵ,
                             fixed_sampler_func=fixed_sampler_func,
                             solver=solver, ptype=ptype)[3]
 
     return train_NN_template(stat_opt_func, loss_func,
                       flow, numsample_max, train_step,
-                      h, decay, gpts, gpts_sampler,
+                      h, decay, gpts, gpts_sampler, ϕ,
                       biased_func=biased_func,
                       ref_value=ref_value, seed=seed,
                       verbose=verbose, printpara=printpara,
@@ -247,5 +263,7 @@ function train_NN_ode(U₀::Potential{T}, U₁::Potential{T},
                       sample_num_repeat=sample_num_repeat,
                       print_sample=print_sample,
                       numsample_min=numsample_min,
-                      savepara=savepara,showprogress=showprogress)
+                      savepara=savepara,
+                      showprogress=showprogress,
+                      compute_rela_divg=compute_rela_divg)
 end

@@ -13,8 +13,7 @@ export get_resource,
        print_stat_name,
        add_procs,
        repeat_experiment,
-       get_mean_sec_moment
-export divide_col, multiply_col
+       divide_col, multiply_col
 
 
 """
@@ -60,9 +59,9 @@ function get_train_stat(train_time, U₁)
 end
 
 function print_train_stat(info; type=:nonzero)
-    @printf("cpu is %s\n", info[:cpu])
-    @printf("nprocs=%d, nthreads=%d\n", info[:nprocs], info[:nthreads])
-    @printf("runtime %.2f (seconds)\n", info[:runtime])
+    @printf("cpu = %s\n", info[:cpu])
+    @printf("nprocs = %d, nthreads = %d\n", info[:nprocs], info[:nthreads])
+    @printf("runtime = %.2f (seconds)\n", info[:runtime])
     a, b, c, d = info[:query]
     if type == :full
         @printf("query (U): %10s\n", datasize(a))
@@ -220,22 +219,6 @@ function repeat_experiment(fun::Function, numsample::Int, numrepeat::Int,
         v[i] = fun(numsample)
     end
     return v
-end
-
-# todo: add NaN protection
-function get_mean_sec_moment(data::Vector{Vector{T}}) where T<:AbstractFloat
-    numsample = length(data)
-    L = length(data[1])
-    fst_m = zeros(T, L)
-    sec_m = zeros(T, L)
-    for j = 1:numsample
-        fst_m .+= data[j]
-        sec_m .+= data[j].^2
-    end
-    fst_m /= numsample
-    sec_m /= numsample
-
-    return fst_m, sec_m
 end
 
 function pretty_float(f::AbstractFloat)

@@ -43,9 +43,11 @@ end
 """
 Initialize a random DynNNGenericTwo.
 """
-function init_random_DynNNGenericTwo(dim::Int, m::Int;
-        convert=x->Float32.(x), init=glorot_uniform, seed::Int=-1,
-        σ = softplus, σderi = sigmoid, σsec_deri = sigmoid_deri, scale=1.0)
+function init_random_DynNNGenericTwo(dim::Int, m::Int, scale::T;
+        init=glorot_uniform, seed::Int=-1,
+        σ = softplus, σderi = sigmoid, σsec_deri = sigmoid_deri) where T<:AbstractFloat
+
+    convert = x->T.(x)
     n = dim
     seed > 0 ? Random.seed!(seed) : nothing
     W1 = convert(init(m,n))

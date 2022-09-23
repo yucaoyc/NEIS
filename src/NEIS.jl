@@ -70,6 +70,7 @@ include("dyn/dyn_util.jl")
 #include("dyn/dyn_grad_flow.jl")
 
 # training optimal flows
+include("opt/phi.jl")
 include("opt/opt.jl")
 include("opt/opt_int.jl")
 include("opt/opt_ode.jl")

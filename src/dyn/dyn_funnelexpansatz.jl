@@ -68,6 +68,6 @@ function init_funnelexpansatz(n::Int, β::T, a::T, Ω::Function) where T<:Abstra
     para_list = [[β, a]]
     num_para = [2]
     total_num_para = 2
-    return funnelexpansatz(n, para_list, funnelexpansatz_f, 
+    return funnelexpansatz(n, para_list, funnelexpansatz_f,
                            num_para, total_num_para, Ω);
 end

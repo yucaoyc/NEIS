@@ -48,8 +48,10 @@ function init_DynNNGradTwo(dim::Int, m::Int, W1::Array{T,2}, b1::Array{T,1}, W2:
         total_num_para, σ, σderi, σsec_deri, σth_deri)
 end
 
-function init_random_DynNNGradTwo(dim::Int, m::Int; convert=x->Float32.(x),
-        init=glorot_uniform, seed::Int=-1, scale=1.0)
+function init_random_DynNNGradTwo(dim::Int, m::Int, scale::T;
+        init=glorot_uniform, seed::Int=-1) where T<:AbstractFloat
+
+    convert = x->T.(x)
     seed > 0 ? Random.seed!(seed) : nothing
     W1 = convert(init(m, dim))
     b1 = convert(init(m))

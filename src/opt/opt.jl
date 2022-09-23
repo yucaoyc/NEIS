@@ -1,4 +1,5 @@
 export armijo_line_search, train_NN_template, biased_GD_func
+export get_mean_sec_moment, get_mean_entropy
 
 function armijo_line_search(flow::DynTrain{T}, loss_func::Function, numsample::Int,
         grad_normalized::Vector{}, # grad_normalized = ∇f/norm(∇f)
@@ -76,7 +77,8 @@ function train_NN_template(stat_opt_func::Function,
         numsample_max::Int,
         train_step::Int,
         h::T, decay::T,
-        gpts::AbstractMatrix{T}, gpts_sampler::Union{Function,Nothing};
+        gpts::AbstractMatrix{T}, gpts_sampler::Union{Function,Nothing},
+        ϕ::Φ{T};
         # optimal parameters
         biased_func::Union{Function,Nothing} = nothing,
         ref_value = T(1.0),
@@ -92,7 +94,8 @@ function train_NN_template(stat_opt_func::Function,
         savepara::Bool=false,
         showprogress::Bool=true,
         allow_early_terminate::Bool=false,
-        terminate_value::T=T(1.0e-6)) where T<:AbstractFloat
+        terminate_value::T=T(1.0e-6),
+        compute_rela_divg=true) where T<:AbstractFloat
 
     if (to_normalize == false) && (max_search_iter != 0)
         @error("If we don't normalize gradient, we should not use line search!")
@@ -151,13 +154,19 @@ function train_NN_template(stat_opt_func::Function,
             vec_deri /= grad_norm # normalize
         end
         vec_deri = reshape_deri(flow, vec_deri)
-        loss_bef = (est_sec_m[train_iter] - est_fst_m[train_iter]^2)
+        #loss_bef = (est_sec_m[train_iter] - est_fst_m[train_iter]^2)
+        loss_bef = (est_sec_m[train_iter] - ϕ.f(est_fst_m[train_iter]))
 
         rela_mean = est_fst_m[train_iter]/ref_value
-        rela_var = loss_bef/ref_value^2
+        #rela_var = loss_bef/ref_value^2
+        if compute_rela_divg
+            rela_var = loss_bef/ϕ.f(ref_value)
+        else
+            rela_var = loss_bef
+        end
 
         if verbose # print information
-            printstyled(@sprintf("Relative mean %.2E, Relative variance %.2E\n",
+            printstyled(@sprintf("Relative mean %.2E, Relative divergence %.2E\n",
                                  rela_mean, rela_var), color=:green)
         end
 
@@ -172,13 +181,15 @@ function train_NN_template(stat_opt_func::Function,
         # update parameters via line searching.
         if train_iter < train_step
             newh = h/(1+decay*train_iter)
-            time_search = @elapsed search_iter = armijo_line_search(flow, loss_func, numsample,
-                vec_deri, grad_norm, newh, loss_bef,
-                ρ=ρ, c=c,
-                max_search_iter=max_search_iter,
-                sample_num_repeat=sample_num_repeat)
+            time_search = @elapsed search_iter =
+                armijo_line_search(flow, loss_func, numsample,
+                    vec_deri, grad_norm, newh, loss_bef,
+                    ρ=ρ, c=c,
+                    max_search_iter=max_search_iter,
+                    sample_num_repeat=sample_num_repeat)
             if verbose
-                info = @sprintf("Time for %d line search is %.2f (seconds)\n", search_iter, time_search)
+                info = @sprintf("Time for %d line search is %.2f (seconds)\n",
+                                search_iter, time_search)
                 printstyled(info, color=:green)
             end
         else
@@ -187,7 +198,7 @@ function train_NN_template(stat_opt_func::Function,
         if showprogress
             showvalues = [(:iter,train_iter),
                           (:mean, pretty_float(rela_mean)),
-                          (:var, pretty_float(rela_var)),
+                          (:divg, pretty_float(rela_var)),
                           (:time_to_compute_derivative, pretty_float(time_deri)),
                           (:loss_divide_grad_norm, pretty_float(loss_bef/grad_norm)),
                           (:lr, pretty_float(h/(1+decay*train_iter)))]
@@ -222,4 +233,40 @@ function biased_GD_func(x0::Array{T}, iter::Int, train_step::Int,
     else
         return x0
     end
+end
+
+# todo: add NaN protection
+function get_mean_sec_moment(data::Vector{Vector{T}}) where T<:AbstractFloat
+    numsample = length(data)
+    L = length(data[1])
+    fst_m = zeros(T, L)
+    sec_m = zeros(T, L)
+    for j = 1:numsample
+        fst_m .+= data[j]
+        sec_m .+= data[j].^2
+    end
+    fst_m /= numsample
+    sec_m /= numsample
+
+    return fst_m, sec_m
+end
+
+function get_mean_entropy(data::Vector{Vector{T}}, ϕ::Φ{T};
+        idx=[1]) where T<:AbstractFloat
+    """
+    basically, return E(A), dE(ϕ(A))/dθ in fst_m
+    return E(ϕ(A)) in ϕ_m.
+    """
+    numsample = length(data)
+    L = length(data[1])
+    fst_m = zeros(T, L)
+    ϕ_m = zeros(T, length(idx))
+    for j = 1:numsample
+        fst_m .+= data[j]
+        ϕ_m .+= ϕ.f(data[j][idx]) # ϕ(A)
+    end
+    fst_m /= numsample
+    ϕ_m /= numsample
+
+    return fst_m, ϕ_m
 end

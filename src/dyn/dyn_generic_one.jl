@@ -20,11 +20,17 @@ function init_DynNNGenericOne(dim::Int, W::Array{T,2}, b::Array{T,1}) where T <:
     return DynNNGenericOne(dim, para_list, f, [dim^2, dim], dim^2+dim)
 end
 
-function init_random_DynNNGenericOne(dim::Int; convert=x->Float32.(x),
-        init=glorot_uniform, seed::Int=-1)
+function init_random_DynNNGenericOne(dim::Int, scale::T;
+        init=glorot_uniform, seed::Int=-1, init_b=false) where T<:AbstractFloat
+
+    convert = x -> T.(x)
     seed > 0 ? Random.seed!(seed) : nothing
-    W = convert(init(dim,dim))
-    b = convert(init(dim))
+    W = convert(scale*init(dim,dim))
+    if init_b
+        b = convert(scale*init(dim))
+    else
+        b = zeros(T,dim)
+    end
     return init_DynNNGenericOne(dim, W, b)
 end
 

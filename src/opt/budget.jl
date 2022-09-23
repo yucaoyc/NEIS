@@ -1,23 +1,29 @@
 export get_ais_samplesize, get_opt_int_samplesize, get_opt_ode_samplesize
 
-function get_ais_samplesize(K, budget; grad_only=true)
+function get_ais_samplesize(K, budget; grad_only=true, verbose=true)
     if grad_only
-        return Int64(round(budget/(2*K)))
+        s = Int64(round(budget/(2*K)))
     else
-        return Int64(round(budget/(3*K)))
+        s = Int64(round(budget/(3*K)))
     end
+    verbose ? @printf("sample size = %s\n", datasize(s)) : nothing
+    return s
 end
 
-function get_opt_int_samplesize(N, budget)
-    return Int64((budget/(2*(N+1))))
+function get_opt_int_samplesize(N, budget; verbose=true)
+    s = Int64(round(budget/(2*(N+1))))
+    verbose ? @printf("sample size = %s\n", datasize(s)) : nothing
+    return s
 end
 
-function get_opt_ode_samplesize(N, budget, solver)
+function get_opt_ode_samplesize(N, budget, solver; verbose=true)
     if solver == RK4
-        return Int64(round(budget/(N*4)))
+        s = Int64(round(budget/(N*4)))
     elseif solver == MM
-        return Int64(round(budget/(N*2)))
+        s = Int64(round(budget/(N*2)))
     else
         @assert("Not implemented!")
     end
+    verbose ? @printf("sample size = %s\n", datasize(s)) : nothing
+    return s
 end

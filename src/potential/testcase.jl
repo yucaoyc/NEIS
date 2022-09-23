@@ -5,7 +5,7 @@ export load_eg1,
 function load_eg1(λ::T; n::Int=2, #λ::T=T(5.0),
         σsq::T=T(0.1),
         weight::Array{T}=T.([0.2, 0.8]),
-        count_mode=:unsafe_count) where T <: AbstractFloat
+        count_mode=:safe_count) where T <: AbstractFloat
 
     μ₀ = zeros(T,n)
     Σ₀ = Diagonal(ones(T,n))
@@ -22,10 +22,9 @@ function load_eg1(λ::T; n::Int=2, #λ::T=T(5.0),
 end
 
 # Todo: The implementation for eg2 can be further accelerated (a very minor thing to do though).
-function load_eg2(n::Int, λ::T; σsq₁::T=T(0.1), σsq₂::T=T(0.5),
-        count_mode=:unsafe_count) where T<:AbstractFloat
+function load_eg2(n::Int, λ::T; σsq₁::T=T(0.1), σsq₂::T=T(0.5), num_pts=4,
+        count_mode=:safe_count) where T<:AbstractFloat
 
-    num_pts = 4
     center_pts = [Array{T}([]) for i = 1:num_pts]
     for i = 1:num_pts
         θ = i*(2*pi/num_pts)
@@ -69,7 +68,7 @@ function partition_reduction_percent(Ωq::Function,
 end
 
 function load_eg3(n::Int, σf::T; σ₀::T=T(1.0), radius=T(25.0),
-        count_mode=:unsafe_count) where T<:AbstractFloat
+        count_mode=:safe_count) where T<:AbstractFloat
     Ωq(x) = domain_ball(x, radius)
     U₀ = Gaussian(n, zeros(T,n), σ₀^2)
     UU₁ = Funnel(n, σf)

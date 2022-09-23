@@ -80,10 +80,13 @@ function get_data_err_var(U₀::Potential{T}, U₁::Potential{T},
         N::Int64,
         offset::Int,
         numsample::Int;
+        ϕname="msq", ϕϵ=T(1.0e-3),
         fixed_sampler_func=nothing,
         solver=RK4,
         shiftprotect=true,
         ptype="threads") where T<:AbstractFloat
+
+    ϕ = get_Φ(ϕname, ϕϵ)
 
     test_func = [(x,t,p)->-U₀(x), (x,t,p)->-U₁(x), (x,t,p)-> divg_b(p, x)]
     test_func_para = [nothing nothing para]
@@ -116,8 +119,10 @@ function get_data_err_var(U₀::Potential{T}, U₁::Potential{T},
     end
 
     m = mean(data)
-    m2 = mean(data.^2)
-    return data, m, m2 - m^2
+    #m2 = mean(data.^2)
+    m2 = mean(ϕ.f(data))
+    #return data, m, m2 - m^2
+    return data, m, m2 - ϕ.f(m)
 end
 
 """
@@ -179,7 +184,7 @@ function one_path_optimize_dyn_b(flow::DynTrain{T},
     N::Int, offset::Int,
     init_func::Function,
     init_func_arg,
-    solver::Function;
+    solver::Function, ϕ::Φ{T};
     verbose::Bool=false,
     shiftprotect::Bool=true) where T<:AbstractFloat
 
@@ -238,7 +243,8 @@ function one_path_optimize_dyn_b(flow::DynTrain{T},
         Int_G₀ = [Trapezoidal(G₀[i,(j+offset-N):(j+offset)], h) for j in TmTp]
         tmp₁ = Trapezoidal(G₁[i,TmTp]./B, h)
         tmp₂ = Trapezoidal(F₁[TmTp].*Int_G₀./(B.^2), h)
-        deri[i] = 2*estimator*( tmp₁ - tmp₂ )
+        #deri[i] = 2*estimator*( tmp₁ - tmp₂ )
+        deri[i] = ϕ.fderi(estimator)*( tmp₁ - tmp₂ )
     end
 
     return vcat(estimator, deri)
@@ -263,9 +269,12 @@ where l is the number of parameters where A is the estimator herein (see paper)
 function stat_optimize_dyn_b(U₀::Potential{T}, U₁::Potential{T},
         flow::DynTrain{T}, N::Int,
         offset::Int, numsample::Int;
+        ϕname="msq", ϕϵ::T=T(1.0e-3),
         fixed_sampler_func=nothing,
         solver::Function=RK4,
         ptype="threads") where T<:AbstractFloat
+
+    ϕ = get_Φ(ϕname, ϕϵ)
 
     if fixed_sampler_func == nothing
         # the default way to generate sample
@@ -283,17 +292,18 @@ function stat_optimize_dyn_b(U₀::Potential{T}, U₁::Potential{T},
 
     if ptype == "pmap"
         data = pmap(j-> one_path_optimize_dyn_b(flow, test_func, test_func_para, N,
-                                        offset, init_func, j, solver),
+                                        offset, init_func, j, solver, ϕ),
             1:numsample)
     else
         data = [zeros(T,1+flow.total_num_para) for j=1:numsample]
         Threads.@threads for j = 1:numsample
             data[j] = one_path_optimize_dyn_b(flow, test_func, test_func_para, N,
-                                              offset, init_func, j, solver)
+                                              offset, init_func, j, solver, ϕ)
         end
     end
 
-    return get_mean_sec_moment(data)
+    #return get_mean_sec_moment(data)
+    return get_mean_entropy(data, ϕ)
 end
 
 
@@ -306,6 +316,7 @@ function train_NN_int(U₀::Potential{T}, U₁::Potential{T},
         train_step::Int,
         h::T, decay::T,
         gpts::AbstractMatrix{T}, gpts_sampler::Union{Function,Nothing};
+        ϕname="msq", ϕϵ=T(1.0e-3),
         offset::Int=0,
         biased_func=nothing,
         solver::Function=RK4,
@@ -320,21 +331,26 @@ function train_NN_int(U₀::Potential{T}, U₁::Potential{T},
         numsample_min::Int=-1,
         savepara::Bool=false,
         ptype="threads",
-        showprogress=true) where T<:AbstractFloat
+        showprogress=true,
+        compute_rela_divg=true) where T<:AbstractFloat
+
+    ϕ = get_Φ(ϕname, ϕϵ)
 
     (offset < 0 || offset > N) ? error("Incorrect offset") : nothing
 
     fixed_sampler_func = j->gpts[:,j]
     loss_func(m)=get_data_err_var(U₀, U₁, flow, N, offset, m,
+                                  ϕname=ϕname, ϕϵ=ϕϵ,
                                   fixed_sampler_func=fixed_sampler_func,
                                   solver=solver, ptype=ptype)[3]
     stat_opt_func(m) = stat_optimize_dyn_b(U₀, U₁, flow, N, offset, m,
+                                  ϕname=ϕname, ϕϵ=ϕϵ,
                                   fixed_sampler_func=fixed_sampler_func,
                                   solver=solver, ptype=ptype)
 
     return train_NN_template(stat_opt_func, loss_func,
                       flow, numsample_max, train_step,
-                      h, decay, gpts, gpts_sampler,
+                      h, decay, gpts, gpts_sampler, ϕ,
                       biased_func=biased_func,
                       ref_value=ref_value, seed=seed,
                       verbose=verbose, printpara=printpara,
@@ -343,5 +359,6 @@ function train_NN_int(U₀::Potential{T}, U₁::Potential{T},
                       sample_num_repeat=sample_num_repeat,
                       print_sample=print_sample,
                       numsample_min=numsample_min, savepara=savepara,
-                      showprogress=showprogress)
+                      showprogress=showprogress,
+                      compute_rela_divg=compute_rela_divg)
 end
