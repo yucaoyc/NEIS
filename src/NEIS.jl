@@ -4,7 +4,7 @@ using Distributed
 using LinearAlgebra
 using Printf
 using Random
-using Plots
+using SharedArrays
 using ForwardDiff
 using Documenter
 using FFTW
@@ -15,11 +15,23 @@ using Tullio
 using Reexport: @reexport
 using Statistics: mean, std
 using Flux: glorot_normal, glorot_uniform
+
 import Humanize: datasize
+using Plots
+using Plots.PlotMeasures
+using LaTeXStrings
 using ProgressMeter
+using FileIO, JLD2
 
 export Potential
 export Dyn, DynTrain
+
+# abstract types and a generic functor.
+abstract type Dyn end
+abstract type DynTrain{T} <: Dyn end
+function (flow::DynTrain{T})(x::Array{T}) where T<:AbstractFloat
+    flow.f(x, flow.para_list...)
+end
 
 # Utility function
 include("util/nn.jl")
@@ -53,13 +65,6 @@ include("classical_methods/mala.jl")
 include("classical_methods/ais_neal.jl")
 
 # Flow dynamics
-abstract type Dyn end
-abstract type DynTrain{T} <: Dyn end
-# a generic functor.
-function (flow::DynTrain{T})(x::Array{T}) where T<:AbstractFloat
-    flow.f(x, flow.para_list...)
-end
-
 include("dyn/dyn_fix.jl") # a fixed dynamics
 include("dyn/dyn_generic_two.jl") # a generic two-layer nn-flow.
 include("dyn/dyn_generic_one.jl")
@@ -67,6 +72,7 @@ include("dyn/dyn_grad_two.jl")
 include("dyn/dyn_funnelexpansatz.jl")
 DynNNGeneric=Union{DynNNGenericOne, DynNNGenericTwo, DynNNGradTwo}
 include("dyn/dyn_util.jl")
+include("dyn/init_dyn.jl")
 #include("dyn/dyn_grad_flow.jl")
 
 # training optimal flows
@@ -74,9 +80,11 @@ include("opt/phi.jl")
 include("opt/opt.jl")
 include("opt/opt_int.jl")
 include("opt/opt_ode.jl")
+include("opt/train.jl")
 
 # budget plan
 include("opt/budget.jl")
+include("evaluate/evaluate.jl")
 
 # Generator
 #include("dyn/ode_flow.jl")

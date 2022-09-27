@@ -8,7 +8,8 @@ function armijo_line_search(flow::DynTrain{T}, loss_func::Function, numsample::I
         loss_bef::T;
         ρ= T(0.5), c=T(0.5),
         max_search_iter::Int=10,
-        sample_num_repeat::Int=1) where T<:AbstractFloat
+        sample_num_repeat::Int=1,
+        quiet::Bool=true) where T<:AbstractFloat
 
     new_numsample = numsample*sample_num_repeat
     h = h₀
@@ -27,8 +28,8 @@ function armijo_line_search(flow::DynTrain{T}, loss_func::Function, numsample::I
             loss_aft = loss_func(new_numsample)
         end
 
-        if search_iter >= max_search_iter
-            @warn "Iteration in line search exceeds maximum steps allowed."
+        if search_iter >= max_search_iter && (! quiet)
+            @info("Iteration in line search exceeds maximum steps allowed.")
         end
         return search_iter
     end
@@ -95,7 +96,8 @@ function train_NN_template(stat_opt_func::Function,
         showprogress::Bool=true,
         allow_early_terminate::Bool=false,
         terminate_value::T=T(1.0e-6),
-        compute_rela_divg=true) where T<:AbstractFloat
+        compute_rela_divg=true,
+        quiet::Bool=true) where T<:AbstractFloat
 
     if (to_normalize == false) && (max_search_iter != 0)
         @error("If we don't normalize gradient, we should not use line search!")
@@ -186,7 +188,8 @@ function train_NN_template(stat_opt_func::Function,
                     vec_deri, grad_norm, newh, loss_bef,
                     ρ=ρ, c=c,
                     max_search_iter=max_search_iter,
-                    sample_num_repeat=sample_num_repeat)
+                    sample_num_repeat=sample_num_repeat,
+                    quiet = quiet)
             if verbose
                 info = @sprintf("Time for %d line search is %.2f (seconds)\n",
                                 search_iter, time_search)
@@ -203,7 +206,7 @@ function train_NN_template(stat_opt_func::Function,
                           (:loss_divide_grad_norm, pretty_float(loss_bef/grad_norm)),
                           (:lr, pretty_float(h/(1+decay*train_iter)))]
             if max_search_iter > 0
-                show_values.append((:time_for_line_search, pretty_float(time_search)))
+                push!(showvalues, (:time_for_line_search, pretty_float(time_search)))
             end
             ProgressMeter.next!(progress; showvalues=showvalues)
         end

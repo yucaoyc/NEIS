@@ -182,7 +182,10 @@ end
 ########################################
 # Verify query
 #
-function verify_budget(U::Potential, query_budget::Int; lb=0.98, ub=1.01, grad_only=false)
+function verify_budget(U::Potential, query_budget::Int;
+        lb=0.98, ub=1.01,
+        grad_only=false, verbose=false)
+
     if grad_only
         empirical = get_query_stat(U)[2]
     else
@@ -194,6 +197,9 @@ function verify_budget(U::Potential, query_budget::Int; lb=0.98, ub=1.01, grad_o
         @error("Use too many queries than allowed!")
     else
         # everything is good
-        printstyled("Pass query test!\n", color=:green)
+        if verbose
+            printstyled("Pass query test!\n", color=:green)
+        end
     end
+
 end

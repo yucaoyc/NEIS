@@ -1,4 +1,5 @@
 export get_resource,
+       print_current_resource,
        get_train_stat,
        print_train_stat,
        get_ndims,
@@ -13,7 +14,8 @@ export get_resource,
        print_stat_name,
        add_procs,
        repeat_experiment,
-       divide_col, multiply_col
+       divide_col, multiply_col,
+       separate_line_small, separate_line_big
 
 
 """
@@ -44,10 +46,19 @@ function get_resource()
                 :nthreads=>Threads.nthreads())
 end
 
+function print_current_resource()
+
+    @printf("Current resources:\n")
+    info = get_resource()
+    @printf("- cpu is %s\n", info[:cpu])
+    @printf("- nprocs = %d, nthreads = %d\n", info[:nprocs], info[:nthreads])
+
+end
+
 """
 Pack resources, runtime and query statistics into a Dictionary.
 """
-function get_train_stat(train_time, U₁)
+function get_train_stat(train_time::Number, U₁::Potential{T}) where T<:AbstractFloat
     # get training resources
     info = get_resource()
     # train time
@@ -227,4 +238,12 @@ function pretty_float(f::AbstractFloat)
     else
         @sprintf("%1.3f", f)
     end
+end
+
+function separate_line_small(;str="-",len=40)
+    println(str^len)
+end
+
+function separate_line_big(;str="=",len=40)
+    println(str^len)
 end

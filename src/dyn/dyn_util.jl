@@ -1,10 +1,10 @@
-export update_flow_para!, reshape_deri, update_flow!
+export update_flow_para!, reshape_deri, update_flow!, get_ansatz_name
 
 """
 Given a vector containing the direction that parameters need to move,
 we update the parameters in the flow.
 """
-function update_flow_para!(flow::DynTrain{T}, 
+function update_flow_para!(flow::DynTrain{T},
         vec_deri::Vector{}, h::T) where T<:AbstractFloat
     for i = 1:length(flow.num_para)
         flow.para_list[i] -= h*vec_deri[i]
@@ -33,4 +33,16 @@ end
 function update_flow!(flow::DynTrain{T}, fst_m::Vector{T}, h::T) where T<:AbstractFloat
     vec_deri = reshape_deri(flow, fst_m)
     update_flow_para!(flow, vec_deri, h)
+end
+
+function get_ansatz_name(i::Int)
+    if i == 0
+        return "Linear ansatz"
+    elseif i == 1
+        return "Generic ansatz"
+    elseif i == 2
+        return "Gradient ansatz"
+    elseif i == 4
+        return "Simplified ansatz"
+    end
 end

@@ -238,7 +238,8 @@ function train_NN_ode(U₀::Potential{T}, U₁::Potential{T},
         savepara::Bool=false,
         ptype="threads",
         showprogress=true,
-        compute_rela_divg=true) where T<:AbstractFloat
+        compute_rela_divg=true,
+        quiet::Bool=true) where T<:AbstractFloat
 
     ϕ = get_Φ(ϕname, ϕϵ)
     fixed_sampler_func = j->gpts[:,j]
@@ -265,5 +266,6 @@ function train_NN_ode(U₀::Potential{T}, U₁::Potential{T},
                       numsample_min=numsample_min,
                       savepara=savepara,
                       showprogress=showprogress,
-                      compute_rela_divg=compute_rela_divg)
+                      compute_rela_divg=compute_rela_divg,
+                      quiet=quiet)
 end
