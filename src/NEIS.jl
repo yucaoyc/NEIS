@@ -32,7 +32,9 @@ abstract type DynTrain{T} <: Dyn end
 function (flow::DynTrain{T})(x::Array{T}) where T<:AbstractFloat
     flow.f(x, flow.para_list...)
 end
+abstract type Potential{T} end
 
+########################################
 # Utility function
 include("util/nn.jl")
 include("util/util.jl")
@@ -43,9 +45,7 @@ include("util/traj.jl")
 
 # todo:
 # 1. vectorized implementation of funnel.jl
-#
 # Potential functions
-abstract type Potential{T} end
 include("potential/query.jl")
 include("potential/mixture_potential.jl")
 include("potential/restricted.jl")
@@ -53,7 +53,6 @@ include("potential/gaussian.jl")
 include("potential/gaussian_stat.jl")
 include("potential/funnel.jl")
 include("potential/testcase.jl")
-#include("potential/poisson.jl") # solvers of Poisson eq.
 #include("potential/loggaussiancox.jl")
 function (V::Potential{T})(x::Array{T}) where T<:AbstractFloat
     return U(V, x)
@@ -82,12 +81,12 @@ include("opt/opt_int.jl")
 include("opt/opt_ode.jl")
 include("opt/train.jl")
 
-# budget plan
+# budget plan and evaluate Z
 include("opt/budget.jl")
 include("evaluate/evaluate.jl")
 
 # Generator
-#include("dyn/ode_flow.jl")
-#include("opt/generator.jl")
+include("generator/generator.jl")
+include("generator/solve_poisson_torus.jl") # solvers of Poisson eq. on 2d torus
 
 end # module

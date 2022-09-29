@@ -1,4 +1,6 @@
-export armijo_line_search, train_NN_template, biased_GD_func
+export armijo_line_search, train_NN_template
+export biased_GD_func
+export biased_Langevin
 export get_mean_sec_moment, get_mean_entropy
 
 function armijo_line_search(flow::DynTrain{T}, loss_func::Function, numsample::Int,
@@ -233,6 +235,26 @@ function biased_GD_func(x0::Array{T}, iter::Int, train_step::Int,
         # run the ode till a time
         return time_integrate((z,t,para)->-s*∇U(U₁,z), nothing,
                               x0, T(0.0), T(1.0), N, solver)
+    else
+        return x0
+    end
+end
+
+function biased_Langevin(x0::Array{T}, iter::Int, train_step::Int,
+        percent::T, U₁::Potential{T}, N::Int;
+        s = T(1.0), υ = T(0.5)) where T<:AbstractFloat
+
+    slope = percent/(train_step*υ)
+    p = max(T(0.0), percent - slope*iter)
+    if rand() < p
+        # run the Langevin till a time
+        x = deepcopy(x0)
+        n = length(x0)
+        h = s/N
+        for i = 1:N
+            x = x - ∇U(U₁, x)*h + sqrt(2*h)*randn(T,n)
+        end
+        return x
     else
         return x0
     end

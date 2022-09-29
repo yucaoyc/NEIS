@@ -50,7 +50,7 @@ function gaussU(x::Matrix{T}, μ::Vector{T}, σsqinv::T) where T<:AbstractFloat
     return vec(sum((x .- μ).^2, dims=1).*σsqinv./2)
 end
 
-function gaussU(x::Matrix{T}, μ::Vector{T}, 
+function gaussU(x::Matrix{T}, μ::Vector{T},
         Σinv::Union{Matrix{T},Diagonal{T}}) where T<:AbstractFloat
     return vec(T(0.5)*sum((x .- μ) .* (Σinv*(x .- μ)), dims=1))
 end

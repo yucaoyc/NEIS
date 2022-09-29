@@ -1,5 +1,3 @@
-push!(LOAD_PATH,"../src")
-
 using Test
 using Random
 using LinearAlgebra
@@ -28,7 +26,8 @@ function test_grad(H::Potential{T}, dim) where T<:AbstractFloat
         if T == Float64
             @test err < 0.1*δ^2
         else
-            # the precision is lower for float 32, so the criterion is less strict
+            # the precision is lower for float 32,
+            # so the criterion is less strict
             @test err < 1.0e-5
         end
     end
@@ -81,7 +80,7 @@ end
     Random.seed!(2)
     testnum = 10
     for j = 1:testnum
-	if j < testnum/2 
+	if j < testnum/2
 	    T = Float32
 	else
 	    T = Float64
@@ -93,7 +92,8 @@ end
         Ulist = [Gaussian(dim, μlist[k], Σlist[k]) for k=1:m]
         weightlist = rand(T,m)
 
-        H = generate_mixGaussian(dim, μlist, Σlist, weightlist, count_mode=count_mode)
+        H = generate_mixGaussian(dim, μlist, Σlist, weightlist,
+                                 count_mode=count_mode)
         β = T(0.1 + rand())
         # test gradient implementations.
         test_grad(H, dim)

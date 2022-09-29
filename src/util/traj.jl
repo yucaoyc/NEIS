@@ -55,6 +55,8 @@ end
 """
     In a given picture using Plots,
     we add trajectories of the flow.
+    e.g., t_vec is an array that contains positive times, t_vec = [0, 0.1, 0.2, 0.3]
+    It will automatically include trajectories for  [-0.3, -0.2, -0.1, 0.0].
 """
 function plot_traj(num_particle::Int, traj_gpts::Array{},
         flow::Dyn, t_vec::Vector{T}, unit_step::Int;
@@ -77,11 +79,12 @@ end
 function plot_rho_and_flow(xmin, xmax, ymin, ymax,
         gpts, flow, ρ, figsize;
         unit_step=5, color=:tofino, margin=20px,
-        Nx=100, Ny=100, Tscale=1.0, xlabel="", ylabel="")
+        Nx=100, Ny=100, Tscale=1.0, xlabel="", ylabel="", t_step=50)
 
     xc = range(xmin, stop=xmax, length=Nx)
     yc = range(ymin, stop=ymax, length=Ny)
-    t_vec = Array(range(0,stop=1.0,length=Int64(ceil(Tscale*50))+1))
+
+    t_vec = Array(range(0,stop=Tscale,length=Int64(ceil(Tscale*t_step))+1))
 
     if size(gpts, 2) == 1
         traj_gpts = gpts

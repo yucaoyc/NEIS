@@ -3,7 +3,7 @@
 
 using NNlib: softplus, sigmoid
 
-#@reexport using NNlib: softplus, sigmoid
+@reexport using NNlib: softplus, sigmoid
 
 export sigmoid_deri, sigmoid_sec_deri
 export softplus_dict4, softplus_tuple4

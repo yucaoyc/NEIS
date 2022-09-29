@@ -1,0 +1,9 @@
+julia --project=../ test_ais.jl
+julia --project=../ test_domain.jl
+julia --project=../ test_dyn.jl
+julia --project=../ test_mh_func.jl
+julia --project=../ test_mixGaussian_var.jl
+julia --project=../ test_potential.jl
+julia --project=../ test_util_grid.jl
+julia --project=../ test_util.jl
+julia --project=../ test_torus_solver.jl

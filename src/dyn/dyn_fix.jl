@@ -25,7 +25,7 @@ function divg_b(b::DynFix, x::Array{T}) where T<:AbstractFloat
 end
 
 """
-In case the divergence is know, 
+In case the divergence is know,
 we can speed up the code by using divergence directly.
 """
 mutable struct DynFixWithDivg <: Dyn
