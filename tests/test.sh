@@ -7,3 +7,4 @@ julia --project=../ test_potential.jl
 julia --project=../ test_util_grid.jl
 julia --project=../ test_util.jl
 julia --project=../ test_torus_solver.jl
+julia --project=../ test_neumann_solver.jl

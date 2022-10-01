@@ -88,5 +88,6 @@ include("evaluate/evaluate.jl")
 # Generator
 include("generator/generator.jl")
 include("generator/solve_poisson_torus.jl") # solvers of Poisson eq. on 2d torus
+include("generator/solve_poisson_neumann.jl")
 
 end # module
