@@ -2,10 +2,23 @@ using Test
 
 export test_zero_var_dyn_for_infty_time
 
+"""
+This function tests whether the flow is a zero-variance dynamics using NEIS for U₀ and U₁.
+- gpts contains points to test whether H(x) := ∫ exp(-U₁(Xₜ(x))) Jₜ(x) dt / ∫ exp(-U₀(Xₜ(x))) Jₜ(x) dt = Z₁/Z₀.
+- If exact_mean ≡ Z₁/Z₀ is available, we use it as a reference; otherwise, we only test
+if the random variable H(x), x∼ρ₀ has well-concentrated values.
+- When ∇ ⋅ 𝐛 = ρdiff is available, we can simply pass it for better performance.
+- Nt is the number of time grid points.
+- ϵ is the relative error tolerance.
+- solver is the ODE solver.
+
+Remark: Here we use the finite-time NEIS scheme with T₋ = -1/2.
+Therefore, the flow needs to be already rescaled before using this function.
+"""
 function test_zero_var_dyn_for_infty_time(U₀::Potential{T}, U₁::Potential{T},
         gpts::AbstractMatrix{T}, flow::Dyn{T};
         exact_mean::Union{T,Nothing}=nothing,
-        ρdiff::Any=nothing, Nt::Int=200, ϵ::Number=0.02, solver=RK4) where T<:AbstractFloat
+        ρdiff::Any=nothing, Nt::Int=10^3, ϵ::Number=0.02, solver=RK4) where T<:AbstractFloat
 
     if ρdiff == nothing
         test_func = [(x,t,p)->-U₀(x), (x,t,p)->-U₁(x), (x,t,p)-> divg_b(p, x)]
@@ -39,4 +52,35 @@ function test_zero_var_dyn_for_infty_time(U₀::Potential{T}, U₁::Potential{T}
         v4 = abs(minimum(data[2,:])/exact_mean - 1.0)
         @test maximum([v1,v2,v3,v4]) < ϵ
     end
+end
+
+
+"""
+This function tests whether the flow is a zero-variance dynamics using NEIS for U₀ and U₁.
+- gpts contains points to test whether H(x) := ∫ exp(-U₁(Xₜ(x))) Jₜ(x) dt / ∫ exp(-U₀(Xₜ(x))) Jₜ(x) dt = Z₁/Z₀.
+- If exact_mean ≡ Z₁/Z₀ is available, we use it as a reference; otherwise, we only test
+if the random variable H(x), x∼ρ₀ has well-concentrated values.
+- Tscale is the truncation time to estimate the above integral.
+- When ∇ ⋅ 𝐛 = ρdiff is available, we can simply pass it for better performance.
+- Nt is the number of time grid points.
+- ϵ is the relative error tolerance.
+- solver is the ODE solver.
+
+Remark: Here we use the finite-time NEIS scheme with T₋ = -1/2.
+The flow will be rescaled by Tscale.
+"""
+function test_zero_var_dyn_for_infty_time(U₀::Potential{T}, U₁::Potential{T},
+        gpts::AbstractMatrix{T}, flow_original::Dyn{T}, Tscale::T;
+        exact_mean::Union{T,Nothing}=nothing,
+        ρdiff::Any=nothing, Nt::Int=10^3, ϵ::Number=0.02, solver=RK4) where T<:AbstractFloat
+
+    flow = DynFix{T}(flow_original.dim, x-> Tscale*flow_original(x))
+    if ρdiff != nothing
+        ρdiff_scaled = x->Tscale*ρdiff(x)
+    else
+        ρdiff_scaled = nothing
+    end
+    return test_zero_var_dyn_for_infty_time(U₀, U₁, gpts, flow, exact_mean = exact_mean,
+                                            ρdiff = ρdiff_scaled, Nt = Nt, ϵ = ϵ, solver = solver)
+
 end
