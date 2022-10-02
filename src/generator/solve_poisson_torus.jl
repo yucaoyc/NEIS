@@ -47,10 +47,15 @@ function load_torus_eg(N, λ, a; mode=3, prior="nonuniform")
     Z₁ = sum(map((x₁,x₂)->q₁([x₁, x₂]), xxc, yyc))*(1/N)^2
     ρ₁(x) = q₁(x)/Z₁;
 
-    ρdiff(x) = ρ₁(x) - ρ₀(x)
+    function ρdiff(x)
+        return ρ₁(x) - ρ₀(x)
+    end
     exact_mean = Z₁/Z₀
 
-    return kmat, xgrid, q₀, ρ₀, q₁, ρ₁, ρdiff, exact_mean
+    U₀ = ExplicitPotential(Float64, 2, x->-log(q₀(x)))
+    U₁ = ExplicitPotential(Float64, 2, x->-log(q₁(x)))
+
+    return kmat, xgrid, q₀, ρ₀, q₁, ρ₁, ρdiff, U₀, U₁, exact_mean
 end
 
 
@@ -63,7 +68,8 @@ V(x) = ∑ₖ f(k) exp(-2π i k ⋅ x)
 Then
 Δ V(x) = ∑ₖ f(k) ⟨2π i k, 2π i k⟩ exp(-2π i k⋅x) = -4π^2 ∑ₖ f(k) |k|^2 exp(-2π i k⋅x).
 """
-function solve_poisson_2dtorus_fft(N, xgrid, ρdiff, kmat)
+function solve_poisson_2dtorus_fft(N::Int, xgrid::Array{T},
+        ρdiff::Function, kmat::AbstractMatrix) where T<:AbstractFloat
 
     y = complex(zeros(N,N))
     for i = 1:N
@@ -90,7 +96,7 @@ function solve_poisson_2dtorus_fft(N, xgrid, ρdiff, kmat)
         return [dVx, dVy]
     end
 
-    return coef, V_interp, b_interp, DynFix(2, b_interp)
+    return coef, V_interp, b_interp, DynFix{T}(2, b_interp)
 end
 
 """

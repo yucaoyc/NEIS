@@ -46,7 +46,7 @@ N = 2^9
 λ = 0.2
 a = 2.0
 mode=3
-kmat, xgrid, q₀, ρ₀, q₁, ρ₁, ρdiff, exact_mean = load_torus_eg(N, λ, a, mode=mode);
+kmat, xgrid, q₀, ρ₀, q₁, ρ₁, ρdiff, _, _, exact_mean = load_torus_eg(N, λ, a, mode=mode);
 coef, V_interp, b_interp, flow = solve_poisson_2dtorus_fft(N, xgrid, ρdiff, kmat);
 
 # test solving poisson's equation

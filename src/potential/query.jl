@@ -1,4 +1,5 @@
 export QueryNumber, get_query_stat, print_query_stat, reset_query_stat, verify_budget
+export query_add!
 
 # A data type for query
 QueryNumber = Union{UInt128,Threads.Atomic{UInt128}}

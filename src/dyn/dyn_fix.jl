@@ -4,7 +4,7 @@ export DynFix, DynFixWithDivg
 This is a simplest flow 𝐛: ℜ ᵈ → ℜ ᵈ.
 The function f contains the implementation of 𝐛.
 """
-struct DynFix <: Dyn
+mutable struct DynFix{T} <: Dyn{T}
     dim::Int
     f::Function
 end
@@ -28,7 +28,7 @@ end
 In case the divergence is know,
 we can speed up the code by using divergence directly.
 """
-mutable struct DynFixWithDivg <: Dyn
+mutable struct DynFixWithDivg{T} <: Dyn{T}
     dim::Int
     f::Function
 #    para_list::Array{}

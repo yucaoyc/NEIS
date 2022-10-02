@@ -1,4 +1,4 @@
-export traj_dyn_b, plot_traj, plot_rho_and_flow
+export traj_dyn_b, plot_traj, plot_traj_torus, plot_rho_and_flow
 
 """
 Return the trajectory and the time grid points for a particular initial choice X₀.
@@ -59,7 +59,7 @@ end
     It will automatically include trajectories for  [-0.3, -0.2, -0.1, 0.0].
 """
 function plot_traj(num_particle::Int, traj_gpts::Array{},
-        flow::Dyn, t_vec::Vector{T}, unit_step::Int;
+        flow::Dyn{T}, t_vec::Vector{T}, unit_step::Int;
         idx1::Int = 1, idx2::Int = 2,
         color = :white, lw = 1.0) where T <: AbstractFloat
 
@@ -76,15 +76,59 @@ function plot_traj(num_particle::Int, traj_gpts::Array{},
 end
 
 
+function plot_traj_torus(num_particle::Int, traj_gpts::Array{},
+        flow::Dyn{T}, t_vec::Vector{T}, unit_step::Int;
+        Ω₁::Function=(@. x->mod(x,T(1.0))), Ω₂::Function = (@. x->mod(x,T(1.0))),
+        idx1::Int = 1, idx2::Int = 2,
+        color = :white, lw = 1.0,
+        dx1 = 0.6, dx2 = 0.6) where T <: AbstractFloat
+
+    for i = 1:num_particle
+        traj_state, traj_time, _, _ = traj_dyn_b(traj_gpts[i], flow, t_vec, unit_step,
+            (x,t,p)->flow(x))
+        # move each point into the torus.
+        traj_x = Ω₁(traj_state[idx1,:])
+        traj_y = Ω₂(traj_state[idx2,:])
+        t_idx = []
+        # find time where the trajectory passes the boundary of a tours.
+        for k = 1:(length(traj_time)-1)
+            if abs(traj_x[k+1] - traj_x[k]) > dx1
+                push!(t_idx, k)
+            elseif abs(traj_y[k+1] - traj_y[k]) > dx2
+                push!(t_idx, k)
+            end
+        end
+        push!(t_idx, length(traj_time))
+
+        # plot each connected part one by one.
+        # we skip the segment where the trajectory passes the boundary
+        # if t_vec is refined enough,
+        # such a missing part should be negligible.
+        l_idx = 1
+        for k = 1:length(t_idx)
+            r_idx = t_idx[k]
+            # if r_idx - l_idx > 1
+            if r_idx - l_idx > 0
+                locx(x) = LinearInterpolator(traj_time[l_idx:r_idx], traj_x[l_idx:r_idx])(x)
+                locy(x) = LinearInterpolator(traj_time[l_idx:r_idx], traj_y[l_idx:r_idx])(x)
+                plot!(locx, locy, traj_time[l_idx], traj_time[r_idx],
+                      label="", color=color, linewidth=lw)
+            end
+            l_idx = r_idx + 1
+        end
+    end
+end
+
+
 function plot_rho_and_flow(xmin, xmax, ymin, ymax,
         gpts, flow, ρ, figsize;
         unit_step=5, color=:tofino, margin=20px,
-        Nx=100, Ny=100, Tscale=1.0, xlabel="", ylabel="", t_step=50)
+        Nx=100, Ny=100, Tscale=1.0, xlabel="", ylabel="", t_step=100,
+        plot_torus = false,
+        traj_paras::Dict{Any,Any}=Dict{Any,Any}())
 
     xc = range(xmin, stop=xmax, length=Nx)
     yc = range(ymin, stop=ymax, length=Ny)
-
-    t_vec = Array(range(0,stop=Tscale,length=Int64(ceil(Tscale*t_step))+1))
 
     if size(gpts, 2) == 1
         traj_gpts = gpts
@@ -100,7 +144,13 @@ function plot_rho_and_flow(xmin, xmax, ymin, ymax,
         xlims=(xmin,xmax), ylims=(ymin,ymax),
         margin=margin, xlabel=xlabel, ylabel=ylabel)
 
-    plot_traj(num_particle, traj_gpts, flow, t_vec, unit_step)
+    t_vec = Array(range(0,stop=Tscale,length=Int64(ceil(Tscale*t_step))+1))
+
+    if !plot_torus
+        plot_traj(num_particle, traj_gpts, flow, t_vec, unit_step, traj_paras...)
+    else
+        plot_traj_torus(num_particle, traj_gpts, flow, t_vec, unit_step, traj_paras...)
+    end
 
     return fig_flow
 end

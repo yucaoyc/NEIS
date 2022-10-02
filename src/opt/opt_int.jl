@@ -1,6 +1,5 @@
 export estimate_offset,
        one_path_dyn_b,
-       one_path_dyn_b,
        get_data_err_var,
        optimize_b_dyn,
        test_func_train,
@@ -27,14 +26,14 @@ end
 """
 This function generates a sample of the estimator.
 """
-function one_path_dyn_b(para::Dyn,
+function one_path_dyn_b(para::Dyn{T},
     test_func::AbstractArray{},
     test_func_para::AbstractArray{},
     N::Int, offset::Int,
     init_func::Function, init_func_arg,
     solver::Function;
-    T = Float64,
-    verbose=false, shiftprotect=true)
+#    T = Float64,
+    verbose=false, shiftprotect=true) where T<:AbstractFloat
 
     X₀ = init_func(init_func_arg)
     verbose ? println(X₀) : nothing

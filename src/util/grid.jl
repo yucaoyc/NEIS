@@ -1,4 +1,4 @@
-export rescaleidx, shortest_distance_2d_grid, 
+export rescaleidx, shortest_distance_2d_grid,
     get_grids, get_sparse_grids, meshgrid
 
 """

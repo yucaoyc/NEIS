@@ -13,7 +13,7 @@ using SpecialFunctions
 using BasicInterpolators
 using Tullio
 using Reexport: @reexport
-using Statistics: mean, std
+using Statistics: mean, std, median
 using Flux: glorot_normal, glorot_uniform
 
 import Humanize: datasize
@@ -27,8 +27,8 @@ export Potential
 export Dyn, DynTrain
 
 # abstract types and a generic functor.
-abstract type Dyn end
-abstract type DynTrain{T} <: Dyn end
+abstract type Dyn{T} end
+abstract type DynTrain{T} <: Dyn{T} end
 function (flow::DynTrain{T})(x::Array{T}) where T<:AbstractFloat
     flow.f(x, flow.para_list...)
 end
@@ -53,6 +53,7 @@ include("potential/gaussian.jl")
 include("potential/gaussian_stat.jl")
 include("potential/funnel.jl")
 include("potential/testcase.jl")
+include("potential/explicit.jl")
 #include("potential/loggaussiancox.jl")
 function (V::Potential{T})(x::Array{T}) where T<:AbstractFloat
     return U(V, x)
@@ -80,6 +81,7 @@ include("opt/opt.jl")
 include("opt/opt_int.jl")
 include("opt/opt_ode.jl")
 include("opt/train.jl")
+include("opt/test_zero_var.jl")
 
 # budget plan and evaluate Z
 include("opt/budget.jl")

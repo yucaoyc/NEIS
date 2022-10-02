@@ -7,7 +7,7 @@ mode = 3; prior="uniform"
 xmin = 0; xmax = 1; ymin = 0; ymax = 1;
 Nx = N; Ny = N;
 
-_, _, q₀, ρ₀, q₁, ρ₁, ρdiff, _ = load_torus_eg(N, λ, a, mode=mode, prior=prior);
+_, _, q₀, ρ₀, q₁, ρ₁, ρdiff, _, _, _ = load_torus_eg(N, λ, a, mode=mode, prior=prior);
 
 ρρ₀ = (x,y)->ρ₀([x,y])
 ρρ₁ = (x,y)->ρ₁([x,y]);

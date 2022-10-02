@@ -7,7 +7,7 @@ N = 2^9
 λ = 0.2
 a = 2.0
 mode=3
-kmat, xgrid, q₀, ρ₀, q₁, ρ₁, ρdiff, exact_mean = load_torus_eg(N, λ, a, mode=mode);
+kmat, xgrid, q₀, ρ₀, q₁, ρ₁, ρdiff, _, _, _ = load_torus_eg(N, λ, a, mode=mode);
 numsample = 10^6
 percent, gpts, _ = MH_generate_data_from_uniform(numsample, q₁, dim)
 
