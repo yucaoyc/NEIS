@@ -37,7 +37,7 @@ fig = Plots.histogram2d(sdx, sdy, size=figsize, fill=true, color=:tofino,
     @test abs(ais_estimate/exact_mean-1.0) < 0.05
     print_query_stat(U₁)
     stat = get_query_stat(U₁)
-    @test norm(stat[1] - 3*numsample*K) < 1.0e-5
+    @test norm(stat[1] - 2*numsample*K) < 1.0e-5
     @test norm(stat[2] - 2*numsample*K) < 1.0e-5
 
     # test Vanilla Importance Sampling

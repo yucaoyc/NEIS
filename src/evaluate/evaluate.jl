@@ -22,10 +22,10 @@ function estimate_Z_AIS_within_budget(U₀::Potential{T}, U₁::Potential{T},
 
     # sep_str means a string for space separation.
     reset_query_stat(U₁)
-    numsample = get_ais_samplesize(K, budget, grad_only=true)
+    numsample = get_ais_samplesize(K, budget)
     fun_ais = m -> ais_neal(U₀, U₁, K, m, τ = τ)[2]
     time_ais = @elapsed data_ais = map(j->fun_ais(numsample), 1:numrepeat)
-    verify_budget(U₁, numrepeat*budget, grad_only=true)
+    verify_budget(U₁, numrepeat*budget)
 
     stat_ais = get_cmp_stat(U₁, numrepeat, time_ais, "AIS"*postfix, verbose=verbose, str=sep_str)
     stat_ais["data"] = data_ais
@@ -53,7 +53,7 @@ Return: a dictionary that contains
 - "name": name of the method.
 """
 function estimate_Z_NEIS_within_budget(U₀::Potential{T}, U₁::Potential{T},
-        flow::Dyn, budget::Int, N::Int, numrepeat::Int,
+        flow::Dyn{T}, budget::Int, N::Int, numrepeat::Int,
         discretize_method::String, offset::Int;
         postfix::String="",
         solver::Function=RK4,

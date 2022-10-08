@@ -1,5 +1,6 @@
 export RK4,
        MM,
+       Euler,
        time_integrate
 """
 Run Runge-Kutta-4 for dynamics f(x,t) at position x0 and time t, to the next time t+h
@@ -20,6 +21,11 @@ function MM(f, x0::Union{Tuple,Array}, t::T, h::T, para::Any) where T<:AbstractF
     k1 = f(x0, t, para)
     k2 = f(x0 .+ T(0.5*h).*k1, t+ T(0.5)*h, para)
     return x0 .+ (h.*k2)
+end
+
+function Euler(f, x0::Union{Tuple,Array}, t::T, h::T, para::Any) where T<:AbstractFloat
+    k1 = f(x0, t, para)
+    return x0 .+ (h.*k1)
 end
 
 """

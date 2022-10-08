@@ -32,7 +32,6 @@ function one_path_dyn_b(para::Dyn{T},
     N::Int, offset::Int,
     init_func::Function, init_func_arg,
     solver::Function;
-#    T = Float64,
     verbose=false, shiftprotect=true) where T<:AbstractFloat
 
     X₀ = init_func(init_func_arg)
@@ -102,14 +101,14 @@ function get_data_err_var(U₀::Potential{T}, U₁::Potential{T},
     if ptype == "pmap"
         data = pmap(j->one_path_dyn_b(para, test_func, test_func_para,
                                   N, offset, init_func, j, solver,
-                                  T=T, shiftprotect=shiftprotect)[1],
+                                  shiftprotect=shiftprotect)[1],
                     1:numsample)
     else
         data = zeros(T, numsample)
         Threads.@threads for j = 1:numsample
             data[j] = one_path_dyn_b(para, test_func, test_func_para,
                             N, offset, init_func, j, solver,
-                            T=T, shiftprotect=shiftprotect)[1];
+                            shiftprotect=shiftprotect)[1];
         end
     end
     data, percent = remove_nan(data) # remove NaN

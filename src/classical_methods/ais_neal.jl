@@ -27,8 +27,12 @@ function ais_neal(x::Array{T}, n::Int,
     accept = zeros(T,K)
     G = T(1.0)
     for ℓ = 1:K
-        u_bef = u(x, βlist[ℓ])
-        u_aft = u(x, βlist[ℓ+1])
+        u1x = U₁(x)
+        u0x = U₀(x)
+        u_bef = scheme(u0x, u1x, βlist[ℓ])
+        u_aft = scheme(u0x, u1x, βlist[ℓ+1])
+        #u_bef = u(x, βlist[ℓ])
+        #u_aft = u(x, βlist[ℓ+1])
         G *= exp(-u_aft + u_bef)
         x, accept[ℓ] = MALA_OLD(n, u, gradu, τ, x, args=βlist[ℓ+1], uxargs=u_aft)
     end
