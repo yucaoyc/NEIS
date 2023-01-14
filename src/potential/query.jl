@@ -187,11 +187,13 @@ function verify_budget(U::Potential, query_budget::Int;
         lb=0.98, ub=1.01,
         grad_only=false, verbose=false)
 
-    if grad_only
-        empirical = get_query_stat(U)[2]
-    else
-        empirical = maximum(get_query_stat(U))
-    end
+    #if grad_only
+    #    empirical = get_query_stat(U)[2]
+    #else
+    #    empirical = maximum(get_query_stat(U))
+    #end
+    empirical = sum(get_query_stat(U))
+
     if empirical < query_budget*lb
         @warn("Use fewer queries than allowed!")
     elseif empirical > query_budget*ub

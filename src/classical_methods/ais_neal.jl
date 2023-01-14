@@ -21,20 +21,40 @@ function ais_neal(x::Array{T}, n::Int,
         K::Int, βlist::Array{T}, τ::T;
         scheme::Function=linear_scheme) where T <: AbstractFloat
 
-    u(x, β) = scheme(U₀(x), U₁(x), β)
-    gradu(x, β) = scheme(∇U(U₀,x), ∇U(U₁,x), β)
+    #u(x, β) = scheme(U₀(x), U₁(x), β)
+    #gradu(x, β) = scheme(∇U(U₀,x), ∇U(U₁,x), β)
 
     accept = zeros(T,K)
     G = T(1.0)
+
+    # initial preparation.
+    u1x = U₁(x)
+    dU1x = ∇U(U₁, x)
+
     for ℓ = 1:K
-        u1x = U₁(x)
         u0x = U₀(x)
         u_bef = scheme(u0x, u1x, βlist[ℓ])
         u_aft = scheme(u0x, u1x, βlist[ℓ+1])
-        #u_bef = u(x, βlist[ℓ])
-        #u_aft = u(x, βlist[ℓ+1])
         G *= exp(-u_aft + u_bef)
-        x, accept[ℓ] = MALA_OLD(n, u, gradu, τ, x, args=βlist[ℓ+1], uxargs=u_aft)
+        # x, accept[ℓ] = MALA_OLD(n, u, gradu, τ, x, args=βlist[ℓ+1], uxargs=u_aft)
+
+        # we replace the MALA_OLD via more specialized codes to reduce query costs.
+        args = βlist[ℓ+1]; uxargs = u_aft;
+        ξ = randn(T,n)
+        xnew = x - τ*scheme(∇U(U₀,x), dU1x, args) + sqrt(2*τ)*ξ
+        u1x_new = U₁(xnew); dU1x_new = ∇U(U₁, xnew) # queries to ∇U₁ and U₁ herein.
+        r = exp(-scheme(U₀(xnew), u1x_new, args) + uxargs)
+        r *= exp(-norm(x - (xnew - τ*scheme(∇U(U₀,xnew), dU1x_new, args)))^2/(4*τ))/exp(-norm(ξ)^2/2)
+        a = min(T(1.0), r)
+
+        if rand() < a
+            # accept
+            x = xnew; accept[ℓ] = 1
+            u1x = u1x_new; dU1x = dU1x_new;
+        else
+            # reject
+            accept[ℓ] = 0
+        end
     end
 
     return G, accept

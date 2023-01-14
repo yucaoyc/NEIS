@@ -35,10 +35,13 @@ fig = Plots.histogram2d(sdx, sdy, size=figsize, fill=true, color=:tofino,
     βlist = Array(range(0, stop=1.0, length=K+1))
     @time ais_estimate = ais_neal(U₀, U₁, K, numsample)[2]
     @test abs(ais_estimate/exact_mean-1.0) < 0.05
+    @printf("relative error for ais is %.2E\n", abs(ais_estimate/exact_mean-1.0))
     print_query_stat(U₁)
     stat = get_query_stat(U₁)
-    @test norm(stat[1] - 2*numsample*K) < 1.0e-5
-    @test norm(stat[2] - 2*numsample*K) < 1.0e-5
+    @test norm(stat[1] - numsample*(K+1)) < 1.0e-5
+    @test norm(stat[2] - numsample*(K+1)) < 1.0e-5
+    # test budget function.
+    @test norm(get_ais_samplesize(K, stat[1]) - numsample/2) < 1.0e-3
 
     # test Vanilla Importance Sampling
     @time vanilla_estimate = vanilla_importance_sampling(U₀, U₁, numsample*100)[2]

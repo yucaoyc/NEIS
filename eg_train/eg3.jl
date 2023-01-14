@@ -157,7 +157,7 @@ for model_num in [0, 4]
         printstyled("Start comparison\n", bold=true, color=:blue)
         println("="^40)
 
-        percent_train = 1/7; numrepeat = 10;
+        percent_train = 1/4; numrepeat = 10;
         solver = RK4
         loc_y = 1.35; gap = 0.1; ylim = (0.5, 1.35); outliers = false
 

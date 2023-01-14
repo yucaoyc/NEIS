@@ -293,7 +293,8 @@ function generate_comparison_data(U₀::Potential{T}, U₁::Potential{T},
 
     # load the flow
     flow, train_stat = load(filename, "flow", "train_stat")
-    train_query = Int64(maximum(train_stat[:query]))
+    #train_query = Int64(maximum(train_stat[:query]))
+    train_query = Int64(sum(train_stat[:query]))
     query_budget = Int64(round(train_query/percent_train))
 
     if verbose
@@ -440,7 +441,8 @@ function show_comparison_for_all_random_initializations(U₀::Potential{T}, U₁
 end
 
 function print_data(m_list, model_list, seed_list, ModelParas, data_folder)
-    for s in ["±","\\pm"]
+    #for s in ["±","\\pm"]
+    for s in ["±"]
         for (m, model_num) in Iterators.product(m_list, model_list)
             ModelParas["m"] = m; ModelParas["model_num"] = model_num
             result = Array{Any}(undef, length(seed_list))

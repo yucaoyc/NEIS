@@ -103,7 +103,7 @@ if to_compare
     println("="^40)
 
     xmin = -10; xmax = 10; ymin = -10; ymax = 10
-    percent_train = 1/7;
+    percent_train = 1/4;
     numrepeat = 10;
     solver = RK4
     loc_y = 1.35; gap = 0.1; ylim = (0.75, 1.35); outliers = false

@@ -1,7 +1,7 @@
 export get_ais_samplesize, get_opt_int_samplesize, get_opt_ode_samplesize
 
 function get_ais_samplesize(K, budget; verbose=true)
-    s = Int64(round(budget/(2*K)))
+    s = Int64(round(budget/(K+1)/2))
     verbose ? @printf("sample size = %s\n", datasize(s)) : nothing
     return s
 end
